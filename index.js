@@ -11,15 +11,6 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("React");
-require("./setFast");
-var setFast = function (cb) {
-    if (typeof window !== "undefined") {
-        window["setImmediate"](cb);
-    }
-    else {
-        setTimeout(cb, 0);
-    }
-};
 var invisible = { opacity: 0, height: 0 };
 var DVL = (function (_super) {
     __extends(DVL, _super);
@@ -95,14 +86,15 @@ var DVL = (function (_super) {
             });
         }, this.props.onResizeStart ? 20 : 0);
     };
-    DVL.prototype.reflowComplete = function (toggleFastRender) {
+    DVL.prototype.reflowComplete = function (doFinalPass) {
         var _this = this;
         var maxHeight = 0;
         var columns = Math.floor(this.ref.clientWidth / (this.props.gridItemWidth || 100));
         var rowHeights = [];
         var rowCounter = 0;
+        var progress = this.state.progress;
         var scrollHeight = this.itemHeight.reduce(function (p, c, i) {
-            if (_this.state.progress && i > _this.state.progress - 1)
+            if (progress && i > progress - 1)
                 return p;
             if (_this.props.gridItemWidth) {
                 if (i % columns === 0) {
@@ -131,27 +123,25 @@ var DVL = (function (_super) {
         else {
             this.itemRows = this.itemHeight;
         }
-        if (toggleFastRender) {
+        if (doFinalPass) {
             this.setState({
                 loading: false,
-                scrollHeight: scrollHeight,
                 columns: columns,
                 batch: 0,
                 progress: 0
             }, function () {
+                _this.setState({ scrollHeight: scrollHeight });
                 _this.props.onResizeFinish ? _this.props.onResizeFinish(scrollHeight, columns) : null;
                 _this.scheduleVisibleUpdate();
             });
         }
         else {
+            var avg = Math.round(scrollHeight / progress);
             this.setState({
-                scrollHeight: scrollHeight,
+                scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
                 columns: columns
             }, function () {
-                if (_this.firstRender < 2) {
-                    _this.scheduleVisibleUpdate();
-                    _this.firstRender++;
-                }
+                _this.scheduleVisibleUpdate();
             });
         }
     };
@@ -263,11 +253,12 @@ var DVL = (function (_super) {
                                 _this.reflowComplete(true);
                             }
                             else if (batchCtr === perBatch) {
-                                setFast(function () {
+                                setTimeout(function () {
                                     _this.setState({ batch: _this.state.batch + 1, progress: (_this.state.batch + 1) * perBatch }, function () {
-                                        _this.reflowComplete(false);
+                                        if (_this.state.loading)
+                                            _this.reflowComplete(false);
                                     });
-                                });
+                                }, 0);
                             }
                         }
                     } }, _this.props.onRender(item, i)));

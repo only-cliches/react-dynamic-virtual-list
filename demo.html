@@ -40,14 +40,21 @@
             React.createElement(DVL, {
                 gridItemWidth: 200,
                 // calculateHeight: 23,
-                windowContainer: true,
-                buffer: 1,
-                /*style: {
+                // windowContainer: true,
+                // buffer: 1,
+                style: {
                     height: "500px",
                     overflowY: "scroll"
-                },*/
+                },
                 onRender: (item, index) => {
-                    return React.createElement("div", {key: index, style:{fontSize: item.fontSize, width: 200, display: "inline-block"}}, item.text);
+                    return React.createElement("div", {
+                        key: index, 
+                        style:{
+                            fontSize: item.fontSize, 
+                            width: 200, 
+                            display: "inline-block"
+                        }
+                    },item.text);
                 },
                 items: items
             })

@@ -1,13 +1,5 @@
 import * as React from "React";
-import "./setFast";
 
-const setFast = (cb: () => void) => {
-    if (typeof window !== "undefined") {
-        window["setImmediate"](cb);
-    } else {
-        setTimeout(cb, 0);
-    }
-}
 
 const invisible = { opacity: 0, height: 0 };
 
@@ -127,13 +119,14 @@ export class DVL<T> extends React.Component<{
 
     }
 
-    public reflowComplete(toggleFastRender: boolean) {
+    public reflowComplete(doFinalPass: boolean) {
         let maxHeight = 0;
         const columns = Math.floor(this.ref.clientWidth / (this.props.gridItemWidth || 100));
         let rowHeights: number[] = [];
         let rowCounter: number = 0;
+        const progress = this.state.progress;
         const scrollHeight = this.itemHeight.reduce((p, c, i) => {
-            if (this.state.progress && i > this.state.progress - 1) return p;
+            if (progress && i > progress - 1) return p;
             if (this.props.gridItemWidth) {
                 if (i % columns === 0) {
                     maxHeight = 0;
@@ -162,30 +155,26 @@ export class DVL<T> extends React.Component<{
             this.itemRows = this.itemHeight;
         }
 
-        if (toggleFastRender) {
+        if (doFinalPass) {
             this.setState({
                 loading: false,
-                scrollHeight: scrollHeight,
                 columns: columns,
                 batch: 0,
                 progress: 0
             }, () => {
+                this.setState({ scrollHeight: scrollHeight })
                 this.props.onResizeFinish ? this.props.onResizeFinish(scrollHeight, columns) : null;
                 this.scheduleVisibleUpdate();
             })
         } else {
+            const avg = Math.round(scrollHeight / progress);
             this.setState({
-                scrollHeight: scrollHeight,
+                scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
                 columns: columns
             }, () => {
-                if (this.firstRender < 2) {
-                    this.scheduleVisibleUpdate();
-                    this.firstRender++;
-                }
+                this.scheduleVisibleUpdate();
             })
         }
-
-
     }
 
 
@@ -310,11 +299,11 @@ export class DVL<T> extends React.Component<{
                                             this.reflowComplete(true);
                                         } else if (batchCtr === perBatch) {
                                             // break the call stack so we dont freeze the UI
-                                            setFast(() => {
+                                            setTimeout(() => {
                                                 this.setState({ batch: this.state.batch + 1, progress: (this.state.batch + 1) * perBatch }, () => {
-                                                    this.reflowComplete(false);
+                                                    if (this.state.loading) this.reflowComplete(false);
                                                 });
-                                            });
+                                            }, 0);
                                         }
                                     }
                                 }}>

@@ -1,6 +1,5 @@
 /// <reference types="react" />
 import * as React from "React";
-import "./setFast";
 export declare class DVL<T> extends React.Component<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: T[];
@@ -41,7 +40,7 @@ export declare class DVL<T> extends React.Component<{
     componentWillUnmount(): void;
     debounceResize(): void;
     reflowLayout(): void;
-    reflowComplete(toggleFastRender: boolean): void;
+    reflowComplete(doFinalPass: boolean): void;
     scheduleVisibleUpdate(): void;
     calcVisible(scrollTop?: number, height?: number): void;
     addEventListener(): void;
