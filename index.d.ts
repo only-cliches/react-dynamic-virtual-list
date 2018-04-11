@@ -1,8 +1,8 @@
 /// <reference types="react" />
 import * as React from "React";
-export declare class DVL<T> extends React.Component<{
+export declare class DVL extends React.Component<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
-    items: T[];
+    items: any[];
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
     windowContainer?: boolean;
     buffer?: number;

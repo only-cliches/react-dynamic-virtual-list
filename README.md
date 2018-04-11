@@ -5,7 +5,7 @@ React virtual list component that aims to be the most flexible.
 - Two second, super simple setup.
 - Supports variable element heights.
 - Supports a flexible grid layout.
-- Only 3 KB Gzipped.
+- Only 2 KB Gzipped.
 - Render elements are untouched.
 - Automatically detects element heights.
 - Renders on requestAnimationFrame for good performance.
@@ -33,7 +33,7 @@ const DVL = require("react-dynamic-virtual-list").DVL;
 To use directly in the browser, drop the tag below into your `<head>`.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/react-dynamic-virtual-list@1.1.1/dist/react-dvl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dynamic-virtual-list@1.1.2/dist/react-dvl.min.js"></script>
 ```
 
 
@@ -54,7 +54,7 @@ class App extends React.Component<any, any> {
 }
 ```
 
-## Usage
+## API
 
 The Dynamic Virtual List will render your items 100 at a time onto the dom and measure their height using `.clientHeight`, then use that cached value to render the actual virtual list.  The virtual list will grow in size appropriately as it completes measuring each block.
 

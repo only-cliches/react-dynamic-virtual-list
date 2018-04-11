@@ -1,11 +1,10 @@
 import * as React from "React";
 
-
 const invisible = { opacity: 0, height: 0 };
 
-export class DVL<T> extends React.Component<{
+export class DVL extends React.Component<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
-    items: T[];
+    items: any[];
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
     windowContainer?: boolean;
     buffer?: number;
