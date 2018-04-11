@@ -11,12 +11,23 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("React");
+require("./setFast");
+var setFast = function (cb) {
+    if (typeof window !== "undefined") {
+        window["setImmediate"](cb);
+    }
+    else {
+        setTimeout(cb, 0);
+    }
+};
+var invisible = { opacity: 0, height: 0 };
 var DVL = (function (_super) {
     __extends(DVL, _super);
     function DVL(p) {
         var _this = _super.call(this, p) || this;
         _this.buffer = 5;
         _this.itemHeight = [];
+        _this.itemRows = [];
         _this.batchCounter = 0;
         _this.counter = 0;
         _this.id = Math.random();
@@ -25,9 +36,11 @@ var DVL = (function (_super) {
         _this.calcVisible = _this.calcVisible.bind(_this);
         _this.scheduleVisibleUpdate = _this.scheduleVisibleUpdate.bind(_this);
         _this.rowCache = [];
+        _this.firstRender = 0;
         _this.hasWin = typeof window !== "undefined";
         _this.state = {
             loading: false,
+            progress: 0,
             scrollHeight: 0,
             topSpacer: 0,
             batch: 0,
@@ -44,12 +57,12 @@ var DVL = (function (_super) {
             this.props.doUpdate(this.calcVisible);
         }
         this.reflowLayout();
-        if (this.hasWin) {
+        if (this.hasWin && typeof this.props.calculateHeight !== "number") {
             window.addEventListener("resize", this.debounceResize);
         }
     };
     DVL.prototype.componentWillUnmount = function () {
-        if (this.hasWin) {
+        if (this.hasWin && typeof this.props.calculateHeight !== "number") {
             window.removeEventListener("resize", this.debounceResize);
         }
     };
@@ -65,6 +78,7 @@ var DVL = (function (_super) {
         this.counter = 0;
         setTimeout(function () {
             _this.itemHeight = [];
+            _this.itemRows = [];
             _this.setState({ loading: true, scrollHeight: 0, topSpacer: 0, batch: 0 }, function () {
                 var calcHeight = _this.props.calculateHeight;
                 if (calcHeight !== undefined) {
@@ -76,18 +90,20 @@ var DVL = (function (_super) {
                             _this.itemHeight[i] = calcHeight(_this.ref, item, i);
                         }
                     });
-                    _this.reflowComplete();
+                    _this.reflowComplete(true);
                 }
             });
         }, this.props.onResizeStart ? 20 : 0);
     };
-    DVL.prototype.reflowComplete = function () {
+    DVL.prototype.reflowComplete = function (toggleFastRender) {
         var _this = this;
         var maxHeight = 0;
         var columns = Math.floor(this.ref.clientWidth / (this.props.gridItemWidth || 100));
         var rowHeights = [];
         var rowCounter = 0;
         var scrollHeight = this.itemHeight.reduce(function (p, c, i) {
+            if (_this.state.progress && i > _this.state.progress - 1)
+                return p;
             if (_this.props.gridItemWidth) {
                 if (i % columns === 0) {
                     maxHeight = 0;
@@ -110,12 +126,34 @@ var DVL = (function (_super) {
             }
         }, 0);
         if (this.props.gridItemWidth) {
-            this.itemHeight = rowHeights;
+            this.itemRows = rowHeights;
         }
-        this.setState({ loading: false, scrollHeight: scrollHeight, columns: columns, batch: 0 }, function () {
-            _this.props.onResizeFinish ? _this.props.onResizeFinish(columns) : null;
-            _this.scheduleVisibleUpdate();
-        });
+        else {
+            this.itemRows = this.itemHeight;
+        }
+        if (toggleFastRender) {
+            this.setState({
+                loading: false,
+                scrollHeight: scrollHeight,
+                columns: columns,
+                batch: 0,
+                progress: 0
+            }, function () {
+                _this.props.onResizeFinish ? _this.props.onResizeFinish(scrollHeight, columns) : null;
+                _this.scheduleVisibleUpdate();
+            });
+        }
+        else {
+            this.setState({
+                scrollHeight: scrollHeight,
+                columns: columns
+            }, function () {
+                if (_this.firstRender < 2) {
+                    _this.scheduleVisibleUpdate();
+                    _this.firstRender++;
+                }
+            });
+        }
     };
     DVL.prototype.scheduleVisibleUpdate = function () {
         var _this = this;
@@ -146,36 +184,36 @@ var DVL = (function (_super) {
         }
         var renderRange = [];
         var i = 0;
-        while (i < this.itemHeight.length) {
+        while (i < this.itemRows.length) {
             var start = renderRange[0] !== undefined;
             var end = renderRange[1] !== undefined;
             if (!start || !end) {
                 if (!start && top >= sTop) {
                     renderRange[0] = i;
                 }
-                if (!end && start && (top + this.itemHeight[i]) > sTop + ht) {
+                if (!end && start && (top + this.itemRows[i]) > sTop + ht) {
                     renderRange[1] = i;
                 }
-                top += this.itemHeight[i];
+                top += this.itemRows[i];
                 i++;
             }
             else {
-                i = this.itemHeight.length;
+                i = this.itemRows.length;
             }
         }
         if (renderRange[1] === undefined) {
-            renderRange[1] = this.itemHeight.length - 1;
+            renderRange[1] = this.itemRows.length - 1;
         }
         else {
-            renderRange[1] = Math.min(renderRange[1] + this.buffer, this.itemHeight.length - 1);
+            renderRange[1] = Math.min(renderRange[1] + this.buffer, this.itemRows.length - 1);
         }
         renderRange[0] = Math.max(0, renderRange[0] - this.buffer);
         var topHeight = 0;
         var j = 0;
         for (var j_1 = 0; j_1 < renderRange[0]; j_1++) {
-            if (!this.itemHeight[j_1])
+            if (!this.itemRows[j_1])
                 break;
-            topHeight += this.itemHeight[j_1];
+            topHeight += this.itemRows[j_1];
         }
         this.setState({ renderRange: renderRange, topSpacer: topHeight });
     };
@@ -191,7 +229,7 @@ var DVL = (function (_super) {
     };
     DVL.prototype.render = function () {
         var _this = this;
-        var perBatch = 500;
+        var perBatch = 100;
         var low = (this.state.batch * perBatch);
         var high = low + perBatch;
         var batchCtr = 0;
@@ -205,31 +243,36 @@ var DVL = (function (_super) {
             React.createElement("div", { style: {
                     height: this.state.scrollHeight > 0 ? this.state.scrollHeight - this.state.topSpacer : "unset",
                     paddingTop: this.state.topSpacer
-                } }, this.state.loading ? (this.props.calculateHeight !== undefined ? null : React.createElement("div", null, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (item, i) {
-                return (React.createElement("div", { key: i, ref: function (ref) {
-                        if (ref && !_this.itemHeight[(i + low)]) {
-                            _this.counter++;
-                            batchCtr++;
-                            _this.itemHeight[(i + low)] = ref.clientHeight;
-                            if (_this.counter === _this.props.items.length) {
-                                _this.reflowComplete();
-                            }
-                            else if (batchCtr === perBatch) {
-                                setTimeout(function () {
-                                    _this.setState({ batch: _this.state.batch + 1 });
-                                }, 0);
-                            }
-                        }
-                    } }, _this.props.onRender(item, i)));
-            }))) : this.props.items.filter(function (v, i) {
+                } }, !this.state.loading || this.state.progress ? this.props.items.filter(function (v, i) {
+                if (_this.state.progress && i > _this.state.progress - 1)
+                    return false;
                 if (_this.props.gridItemWidth) {
                     return _this.rowCache[i] >= _this.state.renderRange[0] && _this.rowCache[i] <= _this.state.renderRange[1];
                 }
                 else {
                     return i >= _this.state.renderRange[0] && i <= _this.state.renderRange[1];
                 }
-            }).map(function (item, i) { return _this.props.onRender(item, _this.state.renderRange[0] + i); }))));
+            }).map(function (item, i) { return _this.props.onRender(item, _this.state.renderRange[0] + i, _this.state.columns); }) : null),
+            React.createElement("div", { style: invisible }, this.state.loading ? (this.props.calculateHeight !== undefined ? null : React.createElement("div", null, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (item, i) {
+                return (React.createElement("div", { key: i, ref: function (ref) {
+                        if (ref && !_this.itemHeight[(i + low)]) {
+                            _this.counter++;
+                            batchCtr++;
+                            _this.itemHeight[(i + low)] = ref.clientHeight;
+                            if (_this.counter === _this.props.items.length) {
+                                _this.reflowComplete(true);
+                            }
+                            else if (batchCtr === perBatch) {
+                                setFast(function () {
+                                    _this.setState({ batch: _this.state.batch + 1, progress: (_this.state.batch + 1) * perBatch }, function () {
+                                        _this.reflowComplete(false);
+                                    });
+                                });
+                            }
+                        }
+                    } }, _this.props.onRender(item, i)));
+            }))) : null)));
     };
     return DVL;
-}(React.PureComponent));
+}(React.Component));
 exports.DVL = DVL;

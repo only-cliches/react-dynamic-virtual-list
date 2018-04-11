@@ -1,7 +1,8 @@
 /// <reference types="react" />
 import * as React from "React";
-export declare class DVL<T> extends React.PureComponent<{
-    onRender: (item: any, index: number) => JSX.Element;
+import "./setFast";
+export declare class DVL<T> extends React.Component<{
+    onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: T[];
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
     windowContainer?: boolean;
@@ -12,9 +13,10 @@ export declare class DVL<T> extends React.PureComponent<{
     doUpdate?: (calcVisible: (scrollTop?: number, height?: number) => void) => void;
     gridItemWidth?: number;
     onResizeStart?: () => void;
-    onResizeFinish?: (columns: number) => void;
+    onResizeFinish?: (scrollHeight: number, columns: number) => void;
 }, {
     loading: boolean;
+    progress: number;
     scrollHeight: number;
     topSpacer: number;
     batch: number;
@@ -24,6 +26,7 @@ export declare class DVL<T> extends React.PureComponent<{
     private buffer;
     private ref;
     private itemHeight;
+    private itemRows;
     private doResize;
     private batchCounter;
     private hasWin;
@@ -32,12 +35,13 @@ export declare class DVL<T> extends React.PureComponent<{
     private rowCache;
     private counter;
     private id;
+    private firstRender;
     constructor(p: any);
     componentWillMount(): void;
     componentWillUnmount(): void;
     debounceResize(): void;
     reflowLayout(): void;
-    reflowComplete(): void;
+    reflowComplete(toggleFastRender: boolean): void;
     scheduleVisibleUpdate(): void;
     calcVisible(scrollTop?: number, height?: number): void;
     addEventListener(): void;

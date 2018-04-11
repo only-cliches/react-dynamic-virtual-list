@@ -10,7 +10,8 @@
         "jsx": "react"
     },
     "files": [
-        "./source.tsx"
+        "./source.tsx",
+        "./setFast.ts"
     ],
     "include": []
 }

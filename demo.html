@@ -27,11 +27,11 @@
             return text;
         }
         let items = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 10000; i++) {
             items.push({
                 text: makeid(),
-                fontSize: 20
-                // fontSize: Math.round(Math.random() * 30) + 20
+                // fontSize: 20
+                fontSize: Math.round(Math.random() * 30) + 20
             });
         }
         ReactDOM.render(React.createElement("div", {
@@ -39,7 +39,7 @@
         }, 
             React.createElement(DVL, {
                 gridItemWidth: 200,
-                calculateHeight: 23,
+                // calculateHeight: 23,
                 windowContainer: true,
                 buffer: 1,
                 /*style: {

@@ -5,7 +5,8 @@ React virtual list component that aims to be the most flexible.
 - Two second, super simple setup.
 - Supports variable element heights.
 - Supports a flexible grid layout.
-- Only 1.9 KB Gzipped.
+- Only 3 KB Gzipped.
+- Render elements are untouched.
 - Automatically detects element heights.
 - Renders on requestAnimationFrame for good performance.
 - Take control of when the rendering script is ran.
@@ -54,28 +55,59 @@ class App extends React.Component<any, any> {
 
 ## Usage
 
-The Dynamic Virtual List will first render your items 500 at a time onto the dom and measure their height using `.clientHeight`, then use that cached value to render the actual virtual list.  Callbacks can be used to hide the element while it's doing this, and this behavior can be avoided by passing different values into the `calculateHeight` prop.
+The Dynamic Virtual List will first render your items 100 at a time onto the dom and measure their height using `.clientHeight`, then use that cached value to render the actual virtual list.  Callbacks can be used to hide the element while it's doing this, and this behavior can be avoided by passing different values into the `calculateHeight` prop.
+
+The virtual list will grow in size appropriately as it completes rendering 100 item blocks.
 
 Grid layouts are supported provided each element is a fixed width, elements can be of any height.  
 
-### Props
+## Props
 \* Required
 
-| Prop            | Type                                                                       | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-|-----------------|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| onRender*       | `(item: any, index: number) => JSX.Element`                                | Function to use to render each element, must return a JSX Element.  If using a grid layout make sure you set fixed widths to your elements.                                                                                                                                                                                                                                                                                                                                    |
-| items*          | `any[]`                                                                    | Array of items to render into the list.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| calculateHeight | `(container: HTMLDivElement, item: any, index: number) => number | number` | If this prop is unused, the library will render every element onto the page to discover it's height, then display the virtual list.  You can either pass in a function to use for calculating heights or you can pass in a number that will be used as a fixed height for all elements.                                                                                                                                                                                        |
-| windowContainer | `boolean`                                                                  | Pass "true" to use the window as the scroll container.                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| buffer          | `number`                                                                   | Default is 5, number of rows to render below and above the visual space.                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ref             | `HTMLDivElement`                                                           | The ref of the container DIV generated by the library to contain the list.                                                                                                                                                                                                                                                                                                                                                                                                     |
-| style           | `React.CSSProperties`                                                      | Pass through styles to the container DIV.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| className       | `string`                                                                   | Pass through classes to the container DIV.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| doUpdate        | `(calcVisible: (scrollTop?: number, height?: number) => void) => void`     | By default the library attaches the method to calculate the visible space to the scroll event and renders onRequestAnimationFrame.  You can disable and override this behavior by using this prop, the first argument is the method that calculates whats should be visible on the screen.  You can even pass in manually generated height and scrollTop values.  When you use this prop the library will only update it's visible area when the provided function is called. |
-| gridItemWidth   | `number`                                                                   | Leave blank if you're doing one item per row.  If you're doing a grid layout then pass in the width of each fixed item into here.                                                                                                                                                                                                                                                                                                                                              |
-| onResizeStart   | `() => void`                                                               | On the first render and each time the screen resizes the height of every element is checked and the list is re rendered.  This prop is called just after the resize has triggered and just before the library will start measuring element heights.                                                                                                                                                                                                                            |
-| onResizeFinish  | `(columns: number) => void`                                                | Once the resize is done being calculated this prop will be called.  The number of columns calculated is also passed in as the single argument.                                                                                                                                                                                                                                                                                                                                 |
 
+### *onRender `(item: any, index: number, columns?: number) => JSX.Element;`
+Function to use to render each element, must return a JSX Element.  If using a grid layout make sure you set fixed widths to your elements.  DO NOT use margins, if you need spacing between the elements create an inner element that contains the actual content, creating the margins with an outer div.        
+
+If using grid layout, the number of columns currently being displayed is passed into the render prop as well.  Keep in mind the initial render won't provide a columns argument so even with a grid layout you should set up your render prop to handle `undefined` column values.       
+
+### *items `any[]`
+Array of items to render into the list.
+
+### calculateHeight `(container: HTMLDivElement, item: any, index: number) => number | number`
+If this prop is unused, the library will render every element onto the page to discover it's height with `.clientHeight`, then display the virtual list.  You can change this behavior completely by either passing in a function to use for calculating heights or you can pass in a number that will be used as a fixed height for all elements.     
+
+The `.clientHeight` method works well up to several thousand rows, after that you'll likely want to either use a faster method to calcluate element heights or use the `onResize` props to show a loading screen while the rendering is taking place.
+
+### windowContainer `boolean`
+Pass "true" to use the window as the scroll container.
+
+### buffer `number`
+Default is 5, number of rows to render below and above the visual area.                                                                                
+
+### ref `HTMLDviElement`
+The ref of the container DIV generated by the library to contain the list.                                                                                
+
+### style `React.CSSProperties`
+Pass through styles to the container DIV.
+              
+### className `string`
+Pass through classes to the container DIV.   
+
+### doUpdate `(calcVisible: (scrollTop?: number, height?: number) => void) => void`
+By default the library attaches the method to calculate the visible space to the scroll event and renders onRequestAnimationFrame.  You can disable and override this behavior by using this prop, the first argument is the method that calculates whats should be visible on the screen.  You can even pass in manually generated height and scrollTop values.  When you use this prop the library will only update it's visible area when the provided function is called.
+
+### gridItemWidth `number`
+Leave blank if you're doing one item per row.  If you're doing a grid layout then pass in the width of each fixed item into here.                          
+
+### onResizeStart `() => void`
+On the first render and each time the screen resizes the height of every element is checked and the list is re rendered from scratch.  This prop is called just after the resize has triggered and just before the library will start measuring element heights. 
+
+If a static number is passed into `calculateHeight` this will only be called on the initial render.             
+
+### onResizeFinish `(columns: number) => void`
+Once the resize is done being calculated this prop will be called.  The number of columns calculated is also passed in as the single argument.
+
+If a static number is passed into `calculateHeight` this will only be called on the initial render.
 
 # MIT License
 
