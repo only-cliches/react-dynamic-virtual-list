@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = require("React");
+var React = require("react");
 var invisible = { opacity: 0, height: 0 };
 var DVL = (function (_super) {
     __extends(DVL, _super);
@@ -223,11 +223,11 @@ var DVL = (function (_super) {
         var low = (this.state.batch * perBatch);
         var high = low + perBatch;
         var batchCtr = 0;
-        return (React.createElement("div", { className: this.props.className, style: this.props.style, ref: function (ref) {
+        return (React.createElement("div", { className: this.props.containerClass, style: this.props.containerStyle, ref: function (ref) {
                 if (ref && ref !== _this.ref) {
                     _this.ref = ref;
                     _this.addEventListener();
-                    _this.props.ref ? _this.props.ref(ref) : null;
+                    _this.props.containerRef ? _this.props.containerRef(ref) : null;
                 }
             } },
             React.createElement("div", { style: {

@@ -1,4 +1,4 @@
-import * as React from "React";
+import * as React from "react";
 
 const invisible = { opacity: 0, height: 0 };
 
@@ -8,9 +8,9 @@ export class DVL extends React.Component<{
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
     windowContainer?: boolean;
     buffer?: number;
-    ref?: (ref: HTMLDivElement) => void;
-    style?: React.CSSProperties;
-    className?: string;
+    containerRef?: (ref: HTMLDivElement) => void;
+    containerStyle?: React.CSSProperties;
+    containerClass?: string;
     doUpdate?: (calcVisible: (scrollTop?: number, height?: number) => void) => void;
     gridItemWidth?: number;
     onResizeStart?: () => void;
@@ -265,11 +265,11 @@ export class DVL extends React.Component<{
         let batchCtr: number = 0;
 
         return (
-            <div className={this.props.className} style={this.props.style} ref={(ref) => {
+            <div className={this.props.containerClass} style={this.props.containerStyle} ref={(ref) => {
                 if (ref && ref !== this.ref) {
                     this.ref = ref;
                     this.addEventListener();
-                    this.props.ref ? this.props.ref(ref) : null;
+                    this.props.containerRef ? this.props.containerRef(ref) : null;
                 }
             }}>
                 <div style={{

@@ -1,14 +1,14 @@
 /// <reference types="react" />
-import * as React from "React";
+import * as React from "react";
 export declare class DVL extends React.Component<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: any[];
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
     windowContainer?: boolean;
     buffer?: number;
-    ref?: (ref: HTMLDivElement) => void;
-    style?: React.CSSProperties;
-    className?: string;
+    containerRef?: (ref: HTMLDivElement) => void;
+    containerStyle?: React.CSSProperties;
+    containerClass?: string;
     doUpdate?: (calcVisible: (scrollTop?: number, height?: number) => void) => void;
     gridItemWidth?: number;
     onResizeStart?: () => void;

@@ -27,10 +27,10 @@
             return text;
         }
         let items = [];
-        for (let i = 0; i < 100000; i++) {
+        for (let i = 0; i < 1000; i++) {
             items.push({
                 text: makeid(),
-                // fontSize: 20
+                // fontSize: 20 
                 fontSize: Math.round(Math.random() * 30) + 20
             });
         }
@@ -40,12 +40,12 @@
             React.createElement(DVL, {
                 gridItemWidth: 200,
                 // calculateHeight: 23,
-                // windowContainer: true,
+                windowContainer: true,
                 // buffer: 1,
-                style: {
+                /*style: {
                     height: "500px",
                     overflowY: "scroll"
-                },
+                },*/
                 onRender: (item, index) => {
                     return React.createElement("div", {
                         key: index, 
