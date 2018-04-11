@@ -74,9 +74,11 @@ If using grid layout, the number of columns currently being displayed is passed 
 Array of items to render into the list.
 
 ### calculateHeight `(container: HTMLDivElement, item: any, index: number) => number | number`
-If this prop is unused, the library will render every element onto the page to discover it's height with `.clientHeight`, then display the virtual list.  You can change this behavior completely by either passing in a function to use for calculating heights or you can pass in a number that will be used as a fixed height for all elements.     
+If this prop is unused, the library will render every element onto the page to discover it's height with `.clientHeight`, then display it in the virtual list, 50 items at a time.  You can change this behavior completely by either passing in a function to use for calculating heights or you can pass in a number that will be used as a fixed height for all elements.
 
-The `.clientHeight` method works well up to several thousand rows, after that you'll likely want to either use a faster method to calcluate element heights or use the `onResize` props to show a loading screen while the rendering is taking place.
+Passing in a fixed number is by far the most performant option while the function is a good second choice.
+
+**IMPORTANT!** The library makes *zero* attempts to resolve height conflicts.  If you give a fixed height to the `.calculateHeight` prop and the elements aren't actually fixed to that height, you're gonna have a bad time.
 
 ### windowContainer `boolean`
 Pass "true" to use the window as the scroll container.
