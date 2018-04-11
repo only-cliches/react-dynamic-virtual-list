@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.1/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.1/umd/react-dom.development.js"></script>
+    <script src="dist/react-dvl.min.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+
+    </div>
+    <script>
+        function makeid() {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            for (var i = 0; i < 5; i++)
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            return text;
+        }
+        let items = [];
+        for (let i = 0; i < 10; i++) {
+            items.push({
+                text: makeid(),
+                fontSize: 20
+                // fontSize: Math.round(Math.random() * 30) + 20
+            });
+        }
+        ReactDOM.render(React.createElement("div", {
+            style: {marginTop: "0px"}
+        }, 
+            React.createElement(DVL, {
+                gridItemWidth: 200,
+                calculateHeight: 23,
+                windowContainer: true,
+                buffer: 1,
+                /*style: {
+                    height: "500px",
+                    overflowY: "scroll"
+                },*/
+                onRender: (item, index) => {
+                    return React.createElement("div", {key: index, style:{fontSize: item.fontSize, width: 200, display: "inline-block"}}, item.text);
+                },
+                items: items
+            })
+        ), document.getElementById("app"));
+    </script>
+</body>
+
+</html>

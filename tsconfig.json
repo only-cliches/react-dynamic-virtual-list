@@ -2,21 +2,15 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "jsx": "react",
         "moduleResolution": "node",
         "stripInternal": true,
         "removeComments": true,
-        "importHelpers": false,
-        "strictNullChecks": true,
-        "noImplicitAny": false,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "noImplicitUseStrict": true,
-        "outDir": ".",
         "declaration": true,
-        "declarationDir": "."
+        "declarationDir": "./",
+        "jsx": "react"
     },
     "files": [
-        "source.tsx"
-    ]
+        "./source.tsx"
+    ],
+    "include": []
 }
