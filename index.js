@@ -9,106 +9,140 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = require("react");
+var React = require("React");
 var invisible = { opacity: 0, height: 0 };
 var DVL = (function (_super) {
     __extends(DVL, _super);
     function DVL(p) {
         var _this = _super.call(this, p) || this;
-        _this.buffer = 5;
-        _this.itemHeight = [];
-        _this.itemRows = [];
-        _this.batchCounter = 0;
-        _this.counter = 0;
-        _this.id = Math.random();
-        _this.reflowLayout = _this.reflowLayout.bind(_this);
-        _this.debounceResize = _this.debounceResize.bind(_this);
-        _this.calcVisible = _this.calcVisible.bind(_this);
-        _this.scheduleVisibleUpdate = _this.scheduleVisibleUpdate.bind(_this);
-        _this.rowCache = [];
-        _this.firstRender = 0;
-        _this.hasWin = typeof window !== "undefined";
+        _this._buffer = 5;
+        _this._itemHeight = [];
+        _this._itemRows = [];
+        _this._batchCounter = 0;
+        _this._counter = 0;
+        _this._reflowLayout = _this._reflowLayout.bind(_this);
+        _this._debounceResize = _this._debounceResize.bind(_this);
+        _this._calcVisible = _this._calcVisible.bind(_this);
+        _this._doReflow = _this._doReflow.bind(_this);
+        _this._scheduleVisibleUpdate = _this._scheduleVisibleUpdate.bind(_this);
+        _this._rowCache = [];
+        _this._firstRender = 0;
+        _this._hasWin = typeof window !== "undefined";
         _this.state = {
-            loading: false,
-            progress: 0,
-            scrollHeight: 0,
-            topSpacer: 0,
-            batch: 0,
-            renderRange: [],
-            columns: 0
+            _loading: false,
+            _progress: 0,
+            _scrollHeight: 0,
+            _topSpacer: 0,
+            _batch: 0,
+            _renderRange: [],
+            _columns: 0,
+            _renderItems: [],
+            _ref: null
         };
         return _this;
     }
     DVL.prototype.componentWillMount = function () {
-        if (typeof this.props.buffer !== "undefined") {
-            this.buffer = this.props.buffer;
-        }
+        this._buffer = this.props.buffer || 5;
         if (this.props.doUpdate) {
-            this.props.doUpdate(this.calcVisible);
+            this.props.doUpdate(this._calcVisible);
         }
-        this.reflowLayout();
-        if (this.hasWin && typeof this.props.calculateHeight !== "number") {
-            window.addEventListener("resize", this.debounceResize);
+        if (this._hasWin) {
+            window.addEventListener("resize", this._debounceResize);
         }
     };
     DVL.prototype.componentWillUnmount = function () {
-        if (this.hasWin && typeof this.props.calculateHeight !== "number") {
-            window.removeEventListener("resize", this.debounceResize);
+        if (this._hasWin) {
+            window.removeEventListener("resize", this._debounceResize);
+        }
+        if (this._scrollContainer) {
+            this._scrollContainer.removeEventListener("scroll", this._scheduleVisibleUpdate);
         }
     };
-    DVL.prototype.debounceResize = function () {
-        if (this.doResize) {
-            clearTimeout(this.doResize);
-        }
-        this.doResize = setTimeout(this.reflowLayout, 250);
-    };
-    DVL.prototype.reflowLayout = function () {
+    DVL.prototype._debounceResize = function () {
         var _this = this;
-        this.props.onResizeStart ? this.props.onResizeStart() : null;
-        this.counter = 0;
+        if (this._doResize) {
+            clearTimeout(this._doResize);
+        }
+        this._doResize = setTimeout(function () {
+            _this._reflowLayout();
+        }, 250);
+    };
+    DVL.prototype._doReflow = function () {
+        var _this = this;
+        this._counter = 0;
+        this._itemHeight = [];
+        this._itemRows = [];
+        if (this._hasWin && !this._oldScroll) {
+            if (this._scrollContainer !== window) {
+                this._oldScroll = this._scrollContainer.scrollTop;
+                this._scrollContainer.scrollTop = 0;
+            }
+            else {
+                var doc = document.documentElement;
+                this._oldScroll = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
+                console.log(this._oldScroll);
+                this._scrollContainer.scrollTo(0, 0);
+            }
+        }
         setTimeout(function () {
-            _this.itemHeight = [];
-            _this.itemRows = [];
-            _this.setState({ loading: true, scrollHeight: 0, topSpacer: 0, batch: 0 }, function () {
+            _this.setState({ _loading: true, _batch: 0 }, function () {
                 var calcHeight = _this.props.calculateHeight;
                 if (calcHeight !== undefined) {
                     _this.props.items.forEach(function (item, i) {
                         if (typeof calcHeight === "number") {
-                            _this.itemHeight[i] = calcHeight;
+                            _this._itemHeight[i] = calcHeight;
                         }
                         else {
-                            _this.itemHeight[i] = calcHeight(_this.ref, item, i);
+                            _this._itemHeight[i] = calcHeight(_this.state._ref, item, i);
                         }
                     });
-                    _this.reflowComplete(true);
+                    _this._reflowComplete(true);
                 }
             });
-        }, this.props.onResizeStart ? 20 : 0);
+        }, 0);
     };
-    DVL.prototype.reflowComplete = function (doFinalPass) {
+    DVL.prototype._reflowLayout = function () {
+        this.props.onResizeStart ? this.props.onResizeStart(this._doReflow) : this._doReflow();
+    };
+    DVL.prototype._reflowComplete = function (doFinalPass) {
         var _this = this;
         var maxHeight = 0;
-        var columns = Math.floor(this.ref.clientWidth / (this.props.gridItemWidth || 100));
+        var columns = Math.floor(this.state._ref.clientWidth / (this.props.gridItemWidth || 100));
         var rowHeights = [];
         var rowCounter = 0;
-        var progress = this.state.progress;
-        var scrollHeight = this.itemHeight.reduce(function (p, c, i) {
+        this._rowCache = [];
+        var progress = this.state._progress;
+        var fixedHeight = typeof this.props.calculateHeight === "number";
+        if (fixedHeight) {
+            maxHeight = this.props.calculateHeight;
+        }
+        var scrollHeight = this._itemHeight.reduce(function (p, c, i) {
             if (progress && i > progress - 1)
                 return p;
             if (_this.props.gridItemWidth) {
-                if (i % columns === 0) {
-                    maxHeight = 0;
+                _this._rowCache[i] = rowCounter;
+                if (!fixedHeight) {
+                    if (i % columns === 0) {
+                        maxHeight = 0;
+                    }
+                    maxHeight = Math.max(maxHeight, _this._itemHeight[i]);
                 }
-                _this.rowCache[i] = rowCounter;
-                maxHeight = Math.max(maxHeight, _this.itemHeight[i]);
+                if (i === _this._itemHeight.length - 1) {
+                    rowHeights[rowCounter] = maxHeight;
+                    return p + maxHeight;
+                }
                 if (i % columns === (columns - 1)) {
                     rowHeights[rowCounter] = maxHeight;
                     rowCounter++;
-                    return p + maxHeight;
-                }
-                if (i === _this.itemHeight.length - 1) {
-                    rowHeights[rowCounter] = maxHeight;
                     return p + maxHeight;
                 }
                 return p;
@@ -118,152 +152,181 @@ var DVL = (function (_super) {
             }
         }, 0);
         if (this.props.gridItemWidth) {
-            this.itemRows = rowHeights;
+            this._itemRows = rowHeights;
         }
         else {
-            this.itemRows = this.itemHeight;
+            this._itemRows = this._itemHeight;
         }
         if (doFinalPass) {
             this.setState({
-                loading: false,
-                columns: columns,
-                batch: 0,
-                progress: 0
+                _loading: false,
+                _columns: columns,
+                _batch: 0,
+                _progress: 0
             }, function () {
-                _this.setState({ scrollHeight: scrollHeight });
+                _this.setState({ _scrollHeight: scrollHeight }, function () {
+                    _this._scheduleVisibleUpdate();
+                });
                 _this.props.onResizeFinish ? _this.props.onResizeFinish(scrollHeight, columns) : null;
-                _this.scheduleVisibleUpdate();
             });
         }
         else {
             var avg = Math.round(scrollHeight / progress);
             this.setState({
-                scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
-                columns: columns
+                _scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
+                _columns: columns
             }, function () {
-                _this.scheduleVisibleUpdate();
+                _this._scheduleVisibleUpdate();
             });
         }
     };
-    DVL.prototype.scheduleVisibleUpdate = function () {
+    DVL.prototype._scheduleVisibleUpdate = function () {
         var _this = this;
-        if (!this.ticking) {
-            this.ticking = true;
-            window.requestAnimationFrame(function () {
-                _this.calcVisible();
-                _this.ticking = false;
-            });
-        }
-    };
-    DVL.prototype.calcVisible = function (scrollTop, height) {
-        var sTop = scrollTop || this.ref.scrollTop;
-        var ht = height || this.ref.clientHeight;
-        var top = 0;
-        if (this.props.windowContainer && this.hasWin) {
-            var relTop = this.ref.getBoundingClientRect().top;
-            var doc = document.documentElement;
-            sTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
-            var distanceFromTopOfDocument = relTop + sTop;
-            ht = window.innerHeight;
-            if (sTop > distanceFromTopOfDocument) {
-                top += distanceFromTopOfDocument;
+        if (!this._ticking) {
+            this._ticking = true;
+            if (this._hasWin) {
+                window.requestAnimationFrame(function () {
+                    _this._calcVisible();
+                });
             }
             else {
-                top += sTop;
+                setTimeout(function () {
+                    _this._calcVisible();
+                }, 16);
+            }
+        }
+    };
+    DVL.prototype._calcVisible = function (scrollTopIn, heightIn) {
+        var _this = this;
+        var height = heightIn || this.state._ref.clientHeight;
+        if (this._oldScroll && this._hasWin) {
+            if (this._scrollContainer !== window) {
+                this._scrollContainer.scrollTop = Math.min(this._oldScroll, this.state._scrollHeight - height);
+            }
+            else {
+                this._scrollContainer.scrollTo(0, Math.min(this._oldScroll, this.state._scrollHeight));
+            }
+            this._oldScroll = undefined;
+        }
+        var topHeight = 0;
+        var scrollTop = scrollTopIn || this.state._ref.scrollTop;
+        var top = 0;
+        if (this.props.windowContainer && this._hasWin) {
+            var relTop = this.state._ref.getBoundingClientRect().top;
+            var doc = document.documentElement;
+            scrollTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
+            var containerDistanceFromTopOfDoc = relTop + scrollTop;
+            height = window.innerHeight;
+            scrollTop -= containerDistanceFromTopOfDoc;
+            if (scrollTop < 0 && scrollTop < height * -1) {
+                this._ticking = false;
+                return;
             }
         }
         var renderRange = [];
         var i = 0;
-        while (i < this.itemRows.length) {
+        while (i < this._itemRows.length) {
             var start = renderRange[0] !== undefined;
             var end = renderRange[1] !== undefined;
             if (!start || !end) {
-                if (!start && top >= sTop) {
-                    renderRange[0] = i;
+                if (!start && top >= scrollTop) {
+                    renderRange[0] = Math.max(0, i - this._buffer);
+                    topHeight = top;
+                    if (renderRange[0] !== i) {
+                        var goUp = 1;
+                        var diff = (i - renderRange[0]);
+                        while (diff > 0 && goUp <= diff) {
+                            topHeight -= this._itemRows[i - goUp];
+                            goUp++;
+                        }
+                    }
                 }
-                if (!end && start && (top + this.itemRows[i]) > sTop + ht) {
-                    renderRange[1] = i;
+                else if (!end && start && (top + this._itemRows[i]) > scrollTop + height) {
+                    renderRange[1] = Math.min(i + this._buffer, this._itemRows.length);
                 }
-                top += this.itemRows[i];
+                top += this._itemRows[i];
                 i++;
             }
             else {
-                i = this.itemRows.length;
+                i = this._itemRows.length;
             }
         }
         if (renderRange[1] === undefined) {
-            renderRange[1] = this.itemRows.length - 1;
+            renderRange[1] = this._itemRows.length;
         }
-        else {
-            renderRange[1] = Math.min(renderRange[1] + this.buffer, this.itemRows.length - 1);
+        this._ticking = false;
+        if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
+            this.setState({
+                _renderRange: renderRange,
+                _topSpacer: topHeight,
+                _renderItems: (function () {
+                    if (_this.props.calculateHeight !== undefined) {
+                        var ranges = _this.props.gridItemWidth ? renderRange.map(function (r) { return r * _this.state._columns; }) : renderRange;
+                        return _this.props.items.slice.apply(_this.props.items, ranges);
+                    }
+                    return _this.props.items.filter(function (v, i) {
+                        if (_this.state._progress && i > _this.state._progress - 1)
+                            return false;
+                        if (_this.props.gridItemWidth) {
+                            return _this._rowCache[i] >= renderRange[0] && _this._rowCache[i] <= renderRange[1];
+                        }
+                        else {
+                            return i >= renderRange[0] && i <= renderRange[1];
+                        }
+                    });
+                })()
+            });
         }
-        renderRange[0] = Math.max(0, renderRange[0] - this.buffer);
-        var topHeight = 0;
-        var j = 0;
-        for (var j_1 = 0; j_1 < renderRange[0]; j_1++) {
-            if (!this.itemRows[j_1])
-                break;
-            topHeight += this.itemRows[j_1];
-        }
-        this.setState({ renderRange: renderRange, topSpacer: topHeight });
     };
-    DVL.prototype.addEventListener = function () {
-        if (this.ref && !this.props.doUpdate && this.hasWin) {
+    DVL.prototype._addEventListener = function () {
+        if (this.state._ref && !this.props.doUpdate && this._hasWin) {
             if (this.props.windowContainer) {
-                window.addEventListener("scroll", this.scheduleVisibleUpdate);
+                this._scrollContainer = window;
             }
             else {
-                this.ref.addEventListener("scroll", this.scheduleVisibleUpdate);
+                this._scrollContainer = this.state._ref;
             }
+            this._scrollContainer.addEventListener("scroll", this._scheduleVisibleUpdate);
         }
+        this._reflowLayout();
     };
     DVL.prototype.render = function () {
         var _this = this;
         var perBatch = 100;
-        var low = (this.state.batch * perBatch);
+        var low = (this.state._batch * perBatch);
         var high = low + perBatch;
         var batchCtr = 0;
-        return (React.createElement("div", { className: this.props.containerClass, style: this.props.containerStyle, ref: function (ref) {
-                if (ref && ref !== _this.ref) {
-                    _this.ref = ref;
-                    _this.addEventListener();
-                    _this.props.containerRef ? _this.props.containerRef(ref) : null;
+        var startIdx = this.props.gridItemWidth ? this.state._renderRange[0] * this.state._columns : this.state._renderRange[0];
+        return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle), ref: function (ref) {
+                if (ref && ref !== _this.state._ref) {
+                    _this.setState({ _ref: ref }, function () {
+                        _this._addEventListener();
+                        _this.props.containerRef ? _this.props.containerRef(ref) : null;
+                    });
                 }
             } },
-            React.createElement("div", { style: {
-                    height: this.state.scrollHeight > 0 ? this.state.scrollHeight - this.state.topSpacer : "unset",
-                    paddingTop: this.state.topSpacer
-                } }, !this.state.loading || this.state.progress ? this.props.items.filter(function (v, i) {
-                if (_this.state.progress && i > _this.state.progress - 1)
-                    return false;
-                if (_this.props.gridItemWidth) {
-                    return _this.rowCache[i] >= _this.state.renderRange[0] && _this.rowCache[i] <= _this.state.renderRange[1];
-                }
-                else {
-                    return i >= _this.state.renderRange[0] && i <= _this.state.renderRange[1];
-                }
-            }).map(function (item, i) { return _this.props.onRender(item, _this.state.renderRange[0] + i, _this.state.columns); }) : null),
-            React.createElement("div", { style: invisible }, this.state.loading ? (this.props.calculateHeight !== undefined ? null : React.createElement("div", null, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (item, i) {
+            this.state._ref ? React.createElement("div", { style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null,
+            this.state._ref && this.state._loading && this.props.calculateHeight === undefined ? React.createElement("div", { style: invisible }, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (item, i) {
                 return (React.createElement("div", { key: i, ref: function (ref) {
-                        if (ref && !_this.itemHeight[(i + low)]) {
-                            _this.counter++;
+                        if (ref && !_this._itemHeight[(i + low)]) {
+                            _this._counter++;
                             batchCtr++;
-                            _this.itemHeight[(i + low)] = ref.clientHeight;
-                            if (_this.counter === _this.props.items.length) {
-                                _this.reflowComplete(true);
+                            _this._itemHeight[(i + low)] = ref.clientHeight;
+                            if (_this._counter === _this.props.items.length) {
+                                _this._reflowComplete(true);
                             }
                             else if (batchCtr === perBatch) {
                                 setTimeout(function () {
-                                    _this.setState({ batch: _this.state.batch + 1, progress: (_this.state.batch + 1) * perBatch }, function () {
-                                        if (_this.state.loading)
-                                            _this.reflowComplete(false);
+                                    _this.setState({ _batch: _this.state._batch + 1, _progress: (_this.state._batch + 1) * perBatch }, function () {
+                                        if (_this.state._loading)
+                                            _this._reflowComplete(false);
                                     });
                                 }, 0);
                             }
                         }
                     } }, _this.props.onRender(item, i)));
-            }))) : null)));
+            })) : null));
     };
     return DVL;
-}(React.Component));
+}(React.PureComponent));
 exports.DVL = DVL;

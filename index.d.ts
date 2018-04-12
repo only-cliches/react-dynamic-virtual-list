@@ -1,6 +1,6 @@
 /// <reference types="react" />
-import * as React from "react";
-export declare class DVL extends React.Component<{
+import * as React from "React";
+export declare class DVL extends React.PureComponent<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: any[];
     calculateHeight?: (container: HTMLDivElement, item: any, index: number) => number | number;
@@ -9,40 +9,45 @@ export declare class DVL extends React.Component<{
     containerRef?: (ref: HTMLDivElement) => void;
     containerStyle?: React.CSSProperties;
     containerClass?: string;
-    doUpdate?: (calcVisible: (scrollTop?: number, height?: number) => void) => void;
+    innerContainerStyle?: React.CSSProperties;
+    doUpdate?: (calcVisible: (scrollTop?: number, containerHeight?: number) => void) => void;
     gridItemWidth?: number;
-    onResizeStart?: () => void;
+    onResizeStart?: (doResize: () => void) => void;
     onResizeFinish?: (scrollHeight: number, columns: number) => void;
 }, {
-    loading: boolean;
-    progress: number;
-    scrollHeight: number;
-    topSpacer: number;
-    batch: number;
-    renderRange: number[];
-    columns: number;
+    _loading: boolean;
+    _progress: number;
+    _scrollHeight: number;
+    _topSpacer: number;
+    _batch: number;
+    _renderRange: number[];
+    _columns: number;
+    _renderItems: any[];
+    _ref: HTMLDivElement;
 }> {
-    private buffer;
-    private ref;
-    private itemHeight;
-    private itemRows;
-    private doResize;
-    private batchCounter;
-    private hasWin;
-    private scrollDone;
-    private ticking;
-    private rowCache;
-    private counter;
-    private id;
-    private firstRender;
+    private _buffer;
+    private _itemHeight;
+    private _itemRows;
+    private _doResize;
+    private _batchCounter;
+    private _hasWin;
+    private _scrollDone;
+    private _ticking;
+    private _rowCache;
+    private _counter;
+    private _firstRender;
+    private _calcTimer;
+    private _scrollContainer;
+    private _oldScroll;
     constructor(p: any);
     componentWillMount(): void;
     componentWillUnmount(): void;
-    debounceResize(): void;
-    reflowLayout(): void;
-    reflowComplete(doFinalPass: boolean): void;
-    scheduleVisibleUpdate(): void;
-    calcVisible(scrollTop?: number, height?: number): void;
-    addEventListener(): void;
+    private _debounceResize();
+    private _doReflow();
+    private _reflowLayout();
+    private _reflowComplete(doFinalPass);
+    private _scheduleVisibleUpdate();
+    private _calcVisible(scrollTopIn?, heightIn?);
+    private _addEventListener();
     render(): JSX.Element;
 }

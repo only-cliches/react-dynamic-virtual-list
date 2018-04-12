@@ -6,10 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.1/umd/react.development.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.1/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.1/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.1/umd/react-dom.production.min.js"></script>
     <script src="dist/react-dvl.min.js"></script>
+    <style>
 
+    </style>
 </head>
 
 <body>
@@ -30,31 +32,47 @@
         for (let i = 0; i < 1000; i++) {
             items.push({
                 text: makeid(),
-                // fontSize: 20 
-                fontSize: Math.round(Math.random() * 30) + 20
+                fontSize: 20 
+                // fontSize: Math.round(Math.random() * 30) + 20
             });
         }
         ReactDOM.render(React.createElement("div", {
-            style: {marginTop: "0px"}
+            style: {
+                marginTop: "200px"
+            }
         }, 
             React.createElement(DVL, {
                 gridItemWidth: 200,
-                // calculateHeight: 23,
-                windowContainer: true,
-                // buffer: 1,
-                /*style: {
+                calculateHeight: 33,
+                // windowContainer: true,
+                innerContainerStyle: {
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-evenly",
+                    alignContent: "start",
+                    flexWrap: "wrap",
+                },
+                containerStyle: {
                     height: "500px",
                     overflowY: "scroll"
-                },*/
+                },
                 onRender: (item, index) => {
                     return React.createElement("div", {
                         key: index, 
                         style:{
                             fontSize: item.fontSize, 
                             width: 200, 
-                            display: "inline-block"
+                            textAlign: "center",
+                            padding: "5px"
+                            // borderTop: "1px solid black",
+                            // display: "inline-block"
                         }
-                    },item.text);
+                    }, React.createElement("div", {
+                        style: {
+                            background: "rgb(220,220,220)",
+                            width: "100%"
+                        }
+                    }, item.text));
                 },
                 items: items
             })
