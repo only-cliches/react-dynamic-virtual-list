@@ -1,4 +1,4 @@
-import * as React from "React";
+import * as React from "react";
 
 const invisible = { opacity: 0, height: 0 };
 

@@ -1,5 +1,5 @@
 /// <reference types="react" />
-import * as React from "React";
+import * as React from "react";
 export declare class DVL extends React.PureComponent<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: any[];
