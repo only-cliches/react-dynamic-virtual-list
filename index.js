@@ -81,7 +81,7 @@ var DVL = (function (_super) {
         this._counter = 0;
         this._itemHeight = [];
         this._itemRows = [];
-        if (this._hasWin && !this._oldScroll) {
+        if (this._hasWin && !this._oldScroll && this._scrollContainer) {
             if (this._scrollContainer !== window) {
                 this._oldScroll = this._scrollContainer.scrollTop;
                 this._scrollContainer.scrollTop = 0;
