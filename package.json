@@ -1,11 +1,11 @@
 {
   "name": "react-dynamic-virtual-list",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "React virtual list component that supports elements of any size.",
   "main": "index.js",
   "typings": "index.d.ts",
   "scripts": {
-    "build": "rm -rf index.js index.d.ts && tsc && mv source.js index.js && mv source.d.ts index.d.ts && webpack -p"
+    "build": "rm -rf index.js index.d.ts && tsc && mv source.js index.js && mv source.d.ts index.d.ts && webpack"
   },
   "repository": {
     "type": "git",

@@ -6,11 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.1/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.1/umd/react.development.js"></script>
+    <script>
+        var react = React;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.1/umd/react-dom.development.js"></script>
     <script src="dist/react-dvl.min.js"></script>
     <style>
-
+        html, body {
+            margin: 0px;
+            /*overflow: hidden;*/
+        }
     </style>
 </head>
 
@@ -19,60 +25,54 @@
 
     </div>
     <script>
-        function makeid() {
-            var text = "";
-            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-            for (var i = 0; i < 5; i++)
-                text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-            return text;
-        }
         let items = [];
-        for (let i = 0; i < 1000; i++) {
-            items.push({
-                text: makeid(),
+        for (let i = 0; i < 10000; i++) {
+            /*items.push({
+                text: i.toLocaleString(),
                 fontSize: 20 
                 // fontSize: Math.round(Math.random() * 30) + 20
-            });
+            });*/
+            items.push(0);
         }
         ReactDOM.render(React.createElement("div", {
             style: {
-                marginTop: "200px"
+                // marginTop: "200px"
             }
         }, 
             React.createElement(DVL, {
+                // buffer: 0,
                 gridItemWidth: 200,
-                calculateHeight: 33,
+                // calculateHeight: 34,
                 // windowContainer: true,
-                innerContainerStyle: {
+                /*innerContainerStyle: {
                     width: "100%",
                     display: "flex",
                     justifyContent: "space-evenly",
                     alignContent: "start",
                     flexWrap: "wrap",
-                },
+                },*/
                 containerStyle: {
-                    height: "500px",
+                    height: "90vh",
                     overflowY: "scroll"
                 },
                 onRender: (item, index) => {
                     return React.createElement("div", {
                         key: index, 
                         style:{
-                            fontSize: item.fontSize, 
+                            fontSize: 20, 
                             width: 200, 
                             textAlign: "center",
-                            padding: "5px"
+                            padding: "5px",
                             // borderTop: "1px solid black",
-                            // display: "inline-block"
+                            display: "inline-block"
                         }
                     }, React.createElement("div", {
                         style: {
                             background: "rgb(220,220,220)",
-                            width: "100%"
+                            borderTop: "1px solid black",
+                            // width: "100%"
                         }
-                    }, item.text));
+                    }, index.toLocaleString() ));
                 },
                 items: items
             })

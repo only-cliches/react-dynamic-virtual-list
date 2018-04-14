@@ -18,22 +18,19 @@ export class DVL extends React.PureComponent<{
     onResizeFinish?: (scrollHeight: number, columns: number) => void;
 }, {
         _loading: boolean;
-        _progress: number;
         _scrollHeight: number;
         _topSpacer: number;
-        _batch: number;
         _renderRange: number[];
         _columns: number;
+        _progress: number;
         _renderItems: any[];
         _ref: HTMLDivElement;
     }> {
 
     private _buffer = 5;
-    // private _ref: HTMLDivElement;
     private _itemHeight: number[] = [];
     private _itemRows: number[] = [];
     private _doResize: number;
-    private _batchCounter: number = 0;
     private _hasWin: boolean;
     private _scrollDone: number;
     private _ticking: boolean;
@@ -43,6 +40,8 @@ export class DVL extends React.PureComponent<{
     private _calcTimer: number;
     private _scrollContainer: any;
     private _oldScroll: number;
+    private _progressCounter: number = 0;
+    private _useWindow: boolean;
 
     constructor(p) {
         super(p);
@@ -60,7 +59,6 @@ export class DVL extends React.PureComponent<{
             _progress: 0,
             _scrollHeight: 0,
             _topSpacer: 0,
-            _batch: 0,
             _renderRange: [],
             _columns: 0,
             _renderItems: [],
@@ -70,7 +68,9 @@ export class DVL extends React.PureComponent<{
 
     public componentWillMount(): void {
 
-        this._buffer = this.props.buffer || 5;
+        this._buffer = this.props.buffer !== undefined ? this.props.buffer : 5;
+
+        this._useWindow = this.props.windowContainer;
 
         if (this.props.doUpdate) {
             this.props.doUpdate(this._calcVisible);
@@ -101,7 +101,7 @@ export class DVL extends React.PureComponent<{
     }
 
     private _doReflow() {
-        this._counter = 0;
+        this._progressCounter = 0;
         this._itemHeight = [];
         this._itemRows = [];
         if (this._hasWin && !this._oldScroll && this._scrollContainer) {
@@ -111,13 +111,12 @@ export class DVL extends React.PureComponent<{
             } else {
                 const doc = document.documentElement;
                 this._oldScroll = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
-                console.log(this._oldScroll);
                 this._scrollContainer.scrollTo(0, 0);
             }
         }
 
         setTimeout(() => {
-            this.setState({ _loading: true, _batch: 0 }, () => {
+            this.setState({ _loading: true }, () => {
                 const calcHeight = this.props.calculateHeight;
                 if (calcHeight !== undefined) {
                     this.props.items.forEach((item, i) => {
@@ -150,8 +149,9 @@ export class DVL extends React.PureComponent<{
         if (fixedHeight) {
             maxHeight = this.props.calculateHeight as any;
         }
+        
         const scrollHeight = this._itemHeight.reduce((p, c, i) => {
-            if (progress && i > progress - 1) return p;
+            if (!doFinalPass && progress && i > progress - 1) return p;
             if (this.props.gridItemWidth) {
 
                 this._rowCache[i] = rowCounter;
@@ -191,7 +191,6 @@ export class DVL extends React.PureComponent<{
             this.setState({
                 _loading: false,
                 _columns: columns,
-                _batch: 0,
                 _progress: 0
             }, () => {
                 this.setState({ _scrollHeight: scrollHeight }, () => {
@@ -201,8 +200,14 @@ export class DVL extends React.PureComponent<{
             })
         } else {
             const avg = Math.round(scrollHeight / progress);
+            const remainingHight = ((this.props.items.length - progress) * avg);
+            /*const items = this._itemRows.length * (this.props.gridItemWidth && columns ? columns : 1);
+            let remainingItems = Math.ceil((this.props.items.length - items) / (this.props.gridItemWidth && columns ? columns : 1));
+            while(remainingItems--) {
+                this._itemRows.push(avg);
+            }*/
             this.setState({
-                _scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
+                _scrollHeight: scrollHeight + remainingHight,
                 _columns: columns
             }, () => {
                 this._scheduleVisibleUpdate();
@@ -210,18 +215,22 @@ export class DVL extends React.PureComponent<{
         }
     }
 
+    private _nextFrame(cb: () => void) {
+        if (this._hasWin) {
+            window.requestAnimationFrame(() => {
+                cb();
+            });
+        } else {
+            setTimeout(() => {
+                cb();
+            }, 16);
+        }
+    }
+
     private _scheduleVisibleUpdate() {
         if (!this._ticking) {
             this._ticking = true;
-            if (this._hasWin) {
-                window.requestAnimationFrame(() => {
-                    this._calcVisible();
-                });
-            } else {
-                setTimeout(() => {
-                    this._calcVisible();
-                }, 16);
-            }
+            this._nextFrame(this._calcVisible);
         }
     }
 
@@ -242,7 +251,7 @@ export class DVL extends React.PureComponent<{
         let scrollTop = scrollTopIn || this.state._ref.scrollTop;
         
         let top = 0;
-        if (this.props.windowContainer && this._hasWin) {
+        if (this._useWindow && this._hasWin) {
             let relTop = this.state._ref.getBoundingClientRect().top;
             const doc = document.documentElement;
             scrollTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
@@ -265,7 +274,7 @@ export class DVL extends React.PureComponent<{
             const start = renderRange[0] !== undefined;
             const end = renderRange[1] !== undefined;
             if (!start || !end) {
-                if (!start && top >= scrollTop) {
+                if (!start && (top + this._itemRows[i]) >= scrollTop) {
                     renderRange[0] = Math.max(0, i - this._buffer);
                     topHeight = top;
                     if (renderRange[0] !== i) {
@@ -277,7 +286,7 @@ export class DVL extends React.PureComponent<{
                         }
                     }
 
-                } else if (!end && start && (top + this._itemRows[i]) > scrollTop + height) {
+                } else if (!end && start && top > scrollTop + height) {
                     renderRange[1] = Math.min(i + this._buffer, this._itemRows.length);
                 }
                 top += this._itemRows[i];
@@ -294,7 +303,7 @@ export class DVL extends React.PureComponent<{
         this._ticking = false;
 
         if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {            
-            
+            console.log(renderRange);
             this.setState({
                 _renderRange: renderRange,
                 _topSpacer: topHeight,
@@ -321,7 +330,7 @@ export class DVL extends React.PureComponent<{
     private _addEventListener(): void {
 
         if (this.state._ref && !this.props.doUpdate && this._hasWin) {
-            if (this.props.windowContainer) {
+            if (this._useWindow) {
                 this._scrollContainer = window;
             } else {
                 this._scrollContainer = this.state._ref;
@@ -331,13 +340,10 @@ export class DVL extends React.PureComponent<{
         this._reflowLayout();
     }
 
-
     public render() {
 
-        const perBatch = 100;
-        const low = (this.state._batch * perBatch);
-        const high = low + perBatch;
-        let batchCtr: number = 0;
+        const low = this.state._progress;
+        const high = this.state._progress + 100;
         const startIdx = this.props.gridItemWidth ? this.state._renderRange[0] * this.state._columns : this.state._renderRange[0];
 
         return (
@@ -347,11 +353,36 @@ export class DVL extends React.PureComponent<{
             }} ref={(ref) => {
                 if (ref && ref !== this.state._ref) {
                     this.setState({ _ref: ref }, () => {
+                        if (this._hasWin && window.getComputedStyle(ref).overflow !== "scroll" && window.getComputedStyle(ref).overflowY !== "scroll") {
+                            this._useWindow = true;
+                        }
                         this._addEventListener();
                         this.props.containerRef ? this.props.containerRef(ref) : null;
                     })
                 }
             }}>
+                {this.state._loading && this.props.calculateHeight === undefined && this.props.items && this.props.items.length ? <div style={invisible}>
+                    {this.props.items.filter((v, i) => i >= low && i < high).map((e, j) => {
+                        return this._itemHeight[(low + j)] ? null : <div key={j} ref={(ref) => {
+                            if (ref && !this._itemHeight[(low + j)]) {
+                                this._itemHeight[(low + j)] = ref.clientHeight;
+                                this._progressCounter++;
+                                if (this._progressCounter === this.props.items.length) {
+                                    this._nextFrame(() => {
+                                        this._reflowComplete(true);
+                                    });   
+                                } else if (this._progressCounter > 0 && this._progressCounter % 100 === 0) {
+                                    this._nextFrame(() => {
+                                        this.setState({_progress: this._progressCounter}, () => {
+                                            this._reflowComplete(false);
+                                        });
+                                    });
+                                }
+                            }
+                        }}>{this.props.onRender(e, low + j, 0)}</div>;
+                    })}
+                </div> : null}
+
                 {this.state._ref ? <div style={{
                     height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset",
                     paddingTop: this.state._topSpacer,
@@ -359,31 +390,7 @@ export class DVL extends React.PureComponent<{
                 }}>
                     {(!this.state._loading || this.state._progress) ? this.state._renderItems.map((item, i) => this.props.onRender(item, startIdx + i, this.state._columns)) : null}
                 </div> : null}
-                {this.state._ref && this.state._loading && this.props.calculateHeight === undefined ? <div style={invisible}>
-                    {this.props.items.filter((v, i) => i >= low && i < high).map((item, i) => {
-                        return (
-                            <div key={i} ref={(ref) => {
-                                if (ref && !this._itemHeight[(i + low)]) {
-                                    this._counter++;
-                                    batchCtr++;
-                                    this._itemHeight[(i + low)] = ref.clientHeight;
-                                    if (this._counter === this.props.items.length) {
-                                        this._reflowComplete(true);
-                                    } else if (batchCtr === perBatch) {
-                                        // break the call stack so we dont freeze the UI
-                                        setTimeout(() => {
-                                            this.setState({ _batch: this.state._batch + 1, _progress: (this.state._batch + 1) * perBatch }, () => {
-                                                if (this.state._loading) this._reflowComplete(false);
-                                            });
-                                        }, 0);
-                                    }
-                                }
-                            }}>
-                                {this.props.onRender(item, i)}
-                            </div>
-                        )
-                    })}
-                </div> : null}
+ 
             </div>
         )
     }

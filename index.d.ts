@@ -16,12 +16,11 @@ export declare class DVL extends React.PureComponent<{
     onResizeFinish?: (scrollHeight: number, columns: number) => void;
 }, {
     _loading: boolean;
-    _progress: number;
     _scrollHeight: number;
     _topSpacer: number;
-    _batch: number;
     _renderRange: number[];
     _columns: number;
+    _progress: number;
     _renderItems: any[];
     _ref: HTMLDivElement;
 }> {
@@ -29,7 +28,6 @@ export declare class DVL extends React.PureComponent<{
     private _itemHeight;
     private _itemRows;
     private _doResize;
-    private _batchCounter;
     private _hasWin;
     private _scrollDone;
     private _ticking;
@@ -39,6 +37,8 @@ export declare class DVL extends React.PureComponent<{
     private _calcTimer;
     private _scrollContainer;
     private _oldScroll;
+    private _progressCounter;
+    private _useWindow;
     constructor(p: any);
     componentWillMount(): void;
     componentWillUnmount(): void;
@@ -46,6 +46,7 @@ export declare class DVL extends React.PureComponent<{
     private _doReflow();
     private _reflowLayout();
     private _reflowComplete(doFinalPass);
+    private _nextFrame(cb);
     private _scheduleVisibleUpdate();
     private _calcVisible(scrollTopIn?, heightIn?);
     private _addEventListener();

@@ -27,8 +27,8 @@ var DVL = (function (_super) {
         _this._buffer = 5;
         _this._itemHeight = [];
         _this._itemRows = [];
-        _this._batchCounter = 0;
         _this._counter = 0;
+        _this._progressCounter = 0;
         _this._reflowLayout = _this._reflowLayout.bind(_this);
         _this._debounceResize = _this._debounceResize.bind(_this);
         _this._calcVisible = _this._calcVisible.bind(_this);
@@ -42,7 +42,6 @@ var DVL = (function (_super) {
             _progress: 0,
             _scrollHeight: 0,
             _topSpacer: 0,
-            _batch: 0,
             _renderRange: [],
             _columns: 0,
             _renderItems: [],
@@ -51,7 +50,8 @@ var DVL = (function (_super) {
         return _this;
     }
     DVL.prototype.componentWillMount = function () {
-        this._buffer = this.props.buffer || 5;
+        this._buffer = this.props.buffer !== undefined ? this.props.buffer : 5;
+        this._useWindow = this.props.windowContainer;
         if (this.props.doUpdate) {
             this.props.doUpdate(this._calcVisible);
         }
@@ -78,7 +78,7 @@ var DVL = (function (_super) {
     };
     DVL.prototype._doReflow = function () {
         var _this = this;
-        this._counter = 0;
+        this._progressCounter = 0;
         this._itemHeight = [];
         this._itemRows = [];
         if (this._hasWin && !this._oldScroll && this._scrollContainer) {
@@ -89,12 +89,11 @@ var DVL = (function (_super) {
             else {
                 var doc = document.documentElement;
                 this._oldScroll = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
-                console.log(this._oldScroll);
                 this._scrollContainer.scrollTo(0, 0);
             }
         }
         setTimeout(function () {
-            _this.setState({ _loading: true, _batch: 0 }, function () {
+            _this.setState({ _loading: true }, function () {
                 var calcHeight = _this.props.calculateHeight;
                 if (calcHeight !== undefined) {
                     _this.props.items.forEach(function (item, i) {
@@ -126,7 +125,7 @@ var DVL = (function (_super) {
             maxHeight = this.props.calculateHeight;
         }
         var scrollHeight = this._itemHeight.reduce(function (p, c, i) {
-            if (progress && i > progress - 1)
+            if (!doFinalPass && progress && i > progress - 1)
                 return p;
             if (_this.props.gridItemWidth) {
                 _this._rowCache[i] = rowCounter;
@@ -161,7 +160,6 @@ var DVL = (function (_super) {
             this.setState({
                 _loading: false,
                 _columns: columns,
-                _batch: 0,
                 _progress: 0
             }, function () {
                 _this.setState({ _scrollHeight: scrollHeight }, function () {
@@ -172,28 +170,31 @@ var DVL = (function (_super) {
         }
         else {
             var avg = Math.round(scrollHeight / progress);
+            var remainingHight = ((this.props.items.length - progress) * avg);
             this.setState({
-                _scrollHeight: scrollHeight + ((this.props.items.length - progress) * avg),
+                _scrollHeight: scrollHeight + remainingHight,
                 _columns: columns
             }, function () {
                 _this._scheduleVisibleUpdate();
             });
         }
     };
+    DVL.prototype._nextFrame = function (cb) {
+        if (this._hasWin) {
+            window.requestAnimationFrame(function () {
+                cb();
+            });
+        }
+        else {
+            setTimeout(function () {
+                cb();
+            }, 16);
+        }
+    };
     DVL.prototype._scheduleVisibleUpdate = function () {
-        var _this = this;
         if (!this._ticking) {
             this._ticking = true;
-            if (this._hasWin) {
-                window.requestAnimationFrame(function () {
-                    _this._calcVisible();
-                });
-            }
-            else {
-                setTimeout(function () {
-                    _this._calcVisible();
-                }, 16);
-            }
+            this._nextFrame(this._calcVisible);
         }
     };
     DVL.prototype._calcVisible = function (scrollTopIn, heightIn) {
@@ -211,7 +212,7 @@ var DVL = (function (_super) {
         var topHeight = 0;
         var scrollTop = scrollTopIn || this.state._ref.scrollTop;
         var top = 0;
-        if (this.props.windowContainer && this._hasWin) {
+        if (this._useWindow && this._hasWin) {
             var relTop = this.state._ref.getBoundingClientRect().top;
             var doc = document.documentElement;
             scrollTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
@@ -229,7 +230,7 @@ var DVL = (function (_super) {
             var start = renderRange[0] !== undefined;
             var end = renderRange[1] !== undefined;
             if (!start || !end) {
-                if (!start && top >= scrollTop) {
+                if (!start && (top + this._itemRows[i]) >= scrollTop) {
                     renderRange[0] = Math.max(0, i - this._buffer);
                     topHeight = top;
                     if (renderRange[0] !== i) {
@@ -241,7 +242,7 @@ var DVL = (function (_super) {
                         }
                     }
                 }
-                else if (!end && start && (top + this._itemRows[i]) > scrollTop + height) {
+                else if (!end && start && top > scrollTop + height) {
                     renderRange[1] = Math.min(i + this._buffer, this._itemRows.length);
                 }
                 top += this._itemRows[i];
@@ -256,6 +257,7 @@ var DVL = (function (_super) {
         }
         this._ticking = false;
         if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
+            console.log(renderRange);
             this.setState({
                 _renderRange: renderRange,
                 _topSpacer: topHeight,
@@ -280,7 +282,7 @@ var DVL = (function (_super) {
     };
     DVL.prototype._addEventListener = function () {
         if (this.state._ref && !this.props.doUpdate && this._hasWin) {
-            if (this.props.windowContainer) {
+            if (this._useWindow) {
                 this._scrollContainer = window;
             }
             else {
@@ -292,40 +294,41 @@ var DVL = (function (_super) {
     };
     DVL.prototype.render = function () {
         var _this = this;
-        var perBatch = 100;
-        var low = (this.state._batch * perBatch);
-        var high = low + perBatch;
-        var batchCtr = 0;
+        var low = this.state._progress;
+        var high = this.state._progress + 100;
         var startIdx = this.props.gridItemWidth ? this.state._renderRange[0] * this.state._columns : this.state._renderRange[0];
         return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle), ref: function (ref) {
                 if (ref && ref !== _this.state._ref) {
                     _this.setState({ _ref: ref }, function () {
+                        if (_this._hasWin && window.getComputedStyle(ref).overflow !== "scroll" && window.getComputedStyle(ref).overflowY !== "scroll") {
+                            _this._useWindow = true;
+                        }
                         _this._addEventListener();
                         _this.props.containerRef ? _this.props.containerRef(ref) : null;
                     });
                 }
             } },
-            this.state._ref ? React.createElement("div", { style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null,
-            this.state._ref && this.state._loading && this.props.calculateHeight === undefined ? React.createElement("div", { style: invisible }, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (item, i) {
-                return (React.createElement("div", { key: i, ref: function (ref) {
-                        if (ref && !_this._itemHeight[(i + low)]) {
-                            _this._counter++;
-                            batchCtr++;
-                            _this._itemHeight[(i + low)] = ref.clientHeight;
-                            if (_this._counter === _this.props.items.length) {
-                                _this._reflowComplete(true);
+            this.state._loading && this.props.calculateHeight === undefined && this.props.items && this.props.items.length ? React.createElement("div", { style: invisible }, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (e, j) {
+                return _this._itemHeight[(low + j)] ? null : React.createElement("div", { key: j, ref: function (ref) {
+                        if (ref && !_this._itemHeight[(low + j)]) {
+                            _this._itemHeight[(low + j)] = ref.clientHeight;
+                            _this._progressCounter++;
+                            if (_this._progressCounter === _this.props.items.length) {
+                                _this._nextFrame(function () {
+                                    _this._reflowComplete(true);
+                                });
                             }
-                            else if (batchCtr === perBatch) {
-                                setTimeout(function () {
-                                    _this.setState({ _batch: _this.state._batch + 1, _progress: (_this.state._batch + 1) * perBatch }, function () {
-                                        if (_this.state._loading)
-                                            _this._reflowComplete(false);
+                            else if (_this._progressCounter > 0 && _this._progressCounter % 100 === 0) {
+                                _this._nextFrame(function () {
+                                    _this.setState({ _progress: _this._progressCounter }, function () {
+                                        _this._reflowComplete(false);
                                     });
-                                }, 0);
+                                });
                             }
                         }
-                    } }, _this.props.onRender(item, i)));
-            })) : null));
+                    } }, _this.props.onRender(e, low + j, 0));
+            })) : null,
+            this.state._ref ? React.createElement("div", { style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null));
     };
     return DVL;
 }(React.PureComponent));
