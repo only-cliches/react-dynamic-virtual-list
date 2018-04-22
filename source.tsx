@@ -11,6 +11,7 @@ export class DVL extends React.PureComponent<{
     containerRef?: (ref: HTMLDivElement) => void;
     containerStyle?: React.CSSProperties;
     containerClass?: string;
+    innerContainerClass?: string;
     innerContainerStyle?: React.CSSProperties;
     doUpdate?: (calcVisible: (scrollTop?: number, containerHeight?: number) => void) => void;
     gridItemWidth?: number;
@@ -302,8 +303,7 @@ export class DVL extends React.PureComponent<{
 
         this._ticking = false;
 
-        if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {            
-            console.log(renderRange);
+        if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
             this.setState({
                 _renderRange: renderRange,
                 _topSpacer: topHeight,
@@ -383,7 +383,7 @@ export class DVL extends React.PureComponent<{
                     })}
                 </div> : null}
 
-                {this.state._ref ? <div style={{
+                {this.state._ref ? <div className={this.props.innerContainerClass || ""} style={{
                     height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset",
                     paddingTop: this.state._topSpacer,
                     ...this.props.innerContainerStyle

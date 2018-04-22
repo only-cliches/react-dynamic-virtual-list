@@ -257,7 +257,6 @@ var DVL = (function (_super) {
         }
         this._ticking = false;
         if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
-            console.log(renderRange);
             this.setState({
                 _renderRange: renderRange,
                 _topSpacer: topHeight,
@@ -328,7 +327,7 @@ var DVL = (function (_super) {
                         }
                     } }, _this.props.onRender(e, low + j, 0));
             })) : null,
-            this.state._ref ? React.createElement("div", { style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null));
+            this.state._ref ? React.createElement("div", { className: this.props.innerContainerClass || "", style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null));
     };
     return DVL;
 }(React.PureComponent));

@@ -9,6 +9,7 @@ export declare class DVL extends React.PureComponent<{
     containerRef?: (ref: HTMLDivElement) => void;
     containerStyle?: React.CSSProperties;
     containerClass?: string;
+    innerContainerClass?: string;
     innerContainerStyle?: React.CSSProperties;
     doUpdate?: (calcVisible: (scrollTop?: number, containerHeight?: number) => void) => void;
     gridItemWidth?: number;
