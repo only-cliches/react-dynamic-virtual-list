@@ -325,6 +325,7 @@ var DVL = (function (_super) {
                                 _this._nextFrame(function () {
                                     _this.setState({ _progress: _this._progressCounter }, function () {
                                         _this._reflowComplete(false);
+                                        _this._scheduleVisibleUpdate();
                                     });
                                 });
                             }
