@@ -304,26 +304,26 @@ export class DVL extends React.PureComponent<{
         this._ticking = false;
 
         // if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
-            this.setState({
-                _renderRange: renderRange,
-                _topSpacer: topHeight,
-                _renderItems: (() => {
+        this.setState({
+            _renderRange: renderRange,
+            _topSpacer: topHeight,
+            _renderItems: (() => {
 
-                    if (this.props.calculateHeight !== undefined) {
-                        const ranges = this.props.gridItemWidth ? renderRange.map(r => r * this.state._columns) : renderRange;
-                        return this.props.items.slice.apply(this.props.items, ranges);
+                if (this.props.calculateHeight !== undefined) {
+                    const ranges = this.props.gridItemWidth ? renderRange.map(r => r * this.state._columns) : renderRange;
+                    return this.props.items.slice.apply(this.props.items, ranges);
+                }
+
+                return this.props.items.filter((v, i) => {
+                    if (this.state._progress && i > this.state._progress - 1) return false;
+                    if (this.props.gridItemWidth) {
+                        return this._rowCache[i] >= renderRange[0] && this._rowCache[i] <= renderRange[1];
+                    } else {
+                        return i >= renderRange[0] && i <= renderRange[1];
                     }
-
-                    return this.props.items.filter((v, i) => {
-                        if (this.state._progress && i > this.state._progress - 1) return false;
-                        if (this.props.gridItemWidth) {
-                            return this._rowCache[i] >= renderRange[0] && this._rowCache[i] <= renderRange[1];
-                        } else {
-                            return i >= renderRange[0] && i <= renderRange[1];
-                        }
-                    });
-                })()
-            });
+                });
+            })()
+        });
         // }
     }
 
@@ -375,6 +375,13 @@ export class DVL extends React.PureComponent<{
                     })
                 }
             }}>
+                {this.state._ref ? <div className={this.props.innerContainerClass || ""} style={{
+                    height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset",
+                    paddingTop: this.state._topSpacer,
+                    ...this.props.innerContainerStyle
+                }}>
+                    {(!this.state._loading || this.state._progress) ? this.state._renderItems.map((item, i) => this.props.onRender(item, startIdx + i, this.state._columns)) : null}
+                </div> : null}
                 {this.state._loading && this.props.calculateHeight === undefined && this.props.items && this.props.items.length ? <div style={invisible}>
                     {this.props.items.filter((v, i) => i >= low && i < high).map((e, j) => {
                         return this._itemHeight[(low + j)] ? null : <div key={j} ref={(ref) => {
@@ -396,15 +403,6 @@ export class DVL extends React.PureComponent<{
                         }}>{this.props.onRender(e, low + j, 0)}</div>;
                     })}
                 </div> : null}
-
-                {this.state._ref ? <div className={this.props.innerContainerClass || ""} style={{
-                    height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset",
-                    paddingTop: this.state._topSpacer,
-                    ...this.props.innerContainerStyle
-                }}>
-                    {(!this.state._loading || this.state._progress) ? this.state._renderItems.map((item, i) => this.props.onRender(item, startIdx + i, this.state._columns)) : null}
-                </div> : null}
-
             </div>
         )
     }

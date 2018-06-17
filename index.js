@@ -309,6 +309,7 @@ var DVL = (function (_super) {
                     });
                 }
             } },
+            this.state._ref ? React.createElement("div", { className: this.props.innerContainerClass || "", style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null,
             this.state._loading && this.props.calculateHeight === undefined && this.props.items && this.props.items.length ? React.createElement("div", { style: invisible }, this.props.items.filter(function (v, i) { return i >= low && i < high; }).map(function (e, j) {
                 return _this._itemHeight[(low + j)] ? null : React.createElement("div", { key: j, ref: function (ref) {
                         if (ref && !_this._itemHeight[(low + j)]) {
@@ -328,8 +329,7 @@ var DVL = (function (_super) {
                             }
                         }
                     } }, _this.props.onRender(e, low + j, 0));
-            })) : null,
-            this.state._ref ? React.createElement("div", { className: this.props.innerContainerClass || "", style: __assign({ height: this.state._scrollHeight > 0 ? this.state._scrollHeight - this.state._topSpacer : "unset", paddingTop: this.state._topSpacer }, this.props.innerContainerStyle) }, (!this.state._loading || this.state._progress) ? this.state._renderItems.map(function (item, i) { return _this.props.onRender(item, startIdx + i, _this.state._columns); }) : null) : null));
+            })) : null));
     };
     return DVL;
 }(React.PureComponent));
