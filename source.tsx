@@ -303,7 +303,7 @@ export class DVL extends React.PureComponent<{
 
         this._ticking = false;
 
-        if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
+        // if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
             this.setState({
                 _renderRange: renderRange,
                 _topSpacer: topHeight,
@@ -324,7 +324,7 @@ export class DVL extends React.PureComponent<{
                     });
                 })()
             });
-        }
+        // }
     }
 
     private _addEventListener(): void {
@@ -384,13 +384,11 @@ export class DVL extends React.PureComponent<{
                                 if (this._progressCounter === this.props.items.length) {
                                     this._nextFrame(() => {
                                         this._reflowComplete(true);
-                                        this._calcVisible();
                                     });
                                 } else if (this._progressCounter > 0 && this._progressCounter % 100 === 0) {
                                     this._nextFrame(() => {
                                         this.setState({ _progress: this._progressCounter }, () => {
                                             this._reflowComplete(false);
-                                            this._calcVisible();
                                         });
                                     });
                                 }

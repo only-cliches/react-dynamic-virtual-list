@@ -256,28 +256,26 @@ var DVL = (function (_super) {
             renderRange[1] = this._itemRows.length;
         }
         this._ticking = false;
-        if (this.state._renderRange[0] !== renderRange[0] || this.state._renderRange[1] !== renderRange[1] || topHeight !== this.state._topSpacer) {
-            this.setState({
-                _renderRange: renderRange,
-                _topSpacer: topHeight,
-                _renderItems: (function () {
-                    if (_this.props.calculateHeight !== undefined) {
-                        var ranges = _this.props.gridItemWidth ? renderRange.map(function (r) { return r * _this.state._columns; }) : renderRange;
-                        return _this.props.items.slice.apply(_this.props.items, ranges);
+        this.setState({
+            _renderRange: renderRange,
+            _topSpacer: topHeight,
+            _renderItems: (function () {
+                if (_this.props.calculateHeight !== undefined) {
+                    var ranges = _this.props.gridItemWidth ? renderRange.map(function (r) { return r * _this.state._columns; }) : renderRange;
+                    return _this.props.items.slice.apply(_this.props.items, ranges);
+                }
+                return _this.props.items.filter(function (v, i) {
+                    if (_this.state._progress && i > _this.state._progress - 1)
+                        return false;
+                    if (_this.props.gridItemWidth) {
+                        return _this._rowCache[i] >= renderRange[0] && _this._rowCache[i] <= renderRange[1];
                     }
-                    return _this.props.items.filter(function (v, i) {
-                        if (_this.state._progress && i > _this.state._progress - 1)
-                            return false;
-                        if (_this.props.gridItemWidth) {
-                            return _this._rowCache[i] >= renderRange[0] && _this._rowCache[i] <= renderRange[1];
-                        }
-                        else {
-                            return i >= renderRange[0] && i <= renderRange[1];
-                        }
-                    });
-                })()
-            });
-        }
+                    else {
+                        return i >= renderRange[0] && i <= renderRange[1];
+                    }
+                });
+            })()
+        });
     };
     DVL.prototype._addEventListener = function () {
         if (this.state._ref && !this.props.doUpdate && this._hasWin) {
@@ -319,14 +317,12 @@ var DVL = (function (_super) {
                             if (_this._progressCounter === _this.props.items.length) {
                                 _this._nextFrame(function () {
                                     _this._reflowComplete(true);
-                                    _this._calcVisible();
                                 });
                             }
                             else if (_this._progressCounter > 0 && _this._progressCounter % 100 === 0) {
                                 _this._nextFrame(function () {
                                     _this.setState({ _progress: _this._progressCounter }, function () {
                                         _this._reflowComplete(false);
-                                        _this._calcVisible();
                                     });
                                 });
                             }
