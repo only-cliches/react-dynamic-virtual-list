@@ -319,6 +319,7 @@ var DVL = (function (_super) {
                             if (_this._progressCounter === _this.props.items.length) {
                                 _this._nextFrame(function () {
                                     _this._reflowComplete(true);
+                                    _this._calcVisible();
                                 });
                             }
                             else if (_this._progressCounter > 0 && _this._progressCounter % 100 === 0) {

@@ -384,6 +384,7 @@ export class DVL extends React.PureComponent<{
                                 if (this._progressCounter === this.props.items.length) {
                                     this._nextFrame(() => {
                                         this._reflowComplete(true);
+                                        this._calcVisible();
                                     });
                                 } else if (this._progressCounter > 0 && this._progressCounter % 100 === 0) {
                                     this._nextFrame(() => {
