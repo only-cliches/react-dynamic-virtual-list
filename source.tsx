@@ -389,7 +389,7 @@ export class DVL extends React.PureComponent<{
                                     this._nextFrame(() => {
                                         this.setState({ _progress: this._progressCounter }, () => {
                                             this._reflowComplete(false);
-                                            this._scheduleVisibleUpdate();
+                                            this._calcVisible();
                                         });
                                     });
                                 }
