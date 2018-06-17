@@ -139,7 +139,7 @@ export class DVL extends React.PureComponent<{
     }
 
     private _reflowComplete(doFinalPass: boolean) {
-    
+
         let maxHeight = 0;
         const columns = Math.floor(this.state._ref.clientWidth / (this.props.gridItemWidth || 100));
         let rowHeights: number[] = [];
@@ -150,7 +150,7 @@ export class DVL extends React.PureComponent<{
         if (fixedHeight) {
             maxHeight = this.props.calculateHeight as any;
         }
-        
+
         const scrollHeight = this._itemHeight.reduce((p, c, i) => {
             if (!doFinalPass && progress && i > progress - 1) return p;
             if (this.props.gridItemWidth) {
@@ -250,7 +250,7 @@ export class DVL extends React.PureComponent<{
 
         let topHeight = 0;
         let scrollTop = scrollTopIn || this.state._ref.scrollTop;
-        
+
         let top = 0;
         if (this._useWindow && this._hasWin) {
             let relTop = this.state._ref.getBoundingClientRect().top;
@@ -346,6 +346,20 @@ export class DVL extends React.PureComponent<{
         const high = this.state._progress + 100;
         const startIdx = this.props.gridItemWidth ? this.state._renderRange[0] * this.state._columns : this.state._renderRange[0];
 
+        // SSR
+        if (typeof window === "undefined") {
+            return (
+                <div className={this.props.containerClass} style={{
+                    marginBottom: "10px",
+                    ...this.props.containerStyle,
+                }}>
+                    <div className={this.props.innerContainerClass || ""} style={this.props.innerContainerStyle || {}}>
+                        {this.props.items.map((e, j) => this.props.onRender(e, j, 0))}
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className={this.props.containerClass} style={{
                 marginBottom: "10px",
@@ -370,10 +384,10 @@ export class DVL extends React.PureComponent<{
                                 if (this._progressCounter === this.props.items.length) {
                                     this._nextFrame(() => {
                                         this._reflowComplete(true);
-                                    });   
+                                    });
                                 } else if (this._progressCounter > 0 && this._progressCounter % 100 === 0) {
                                     this._nextFrame(() => {
-                                        this.setState({_progress: this._progressCounter}, () => {
+                                        this.setState({ _progress: this._progressCounter }, () => {
                                             this._reflowComplete(false);
                                         });
                                     });
@@ -390,7 +404,7 @@ export class DVL extends React.PureComponent<{
                 }}>
                     {(!this.state._loading || this.state._progress) ? this.state._renderItems.map((item, i) => this.props.onRender(item, startIdx + i, this.state._columns)) : null}
                 </div> : null}
- 
+
             </div>
         )
     }

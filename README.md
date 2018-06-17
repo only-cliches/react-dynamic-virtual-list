@@ -4,6 +4,7 @@ React virtual list component that aims to be the most flexible and performant.
 ### Features
 - Super simple setup.
 - Just over 2 KB Gzipped.
+- Server side render support.
 - Supports variable element heights.
 - Supports a grid layouts with flexbox.
 - Automatically detects element heights.

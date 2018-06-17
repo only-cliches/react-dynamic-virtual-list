@@ -296,6 +296,10 @@ var DVL = (function (_super) {
         var low = this.state._progress;
         var high = this.state._progress + 100;
         var startIdx = this.props.gridItemWidth ? this.state._renderRange[0] * this.state._columns : this.state._renderRange[0];
+        if (typeof window === "undefined") {
+            return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle) },
+                React.createElement("div", { className: this.props.innerContainerClass || "", style: this.props.innerContainerStyle || {} }, this.props.items.map(function (e, j) { return _this.props.onRender(e, j, 0); }))));
+        }
         return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle), ref: function (ref) {
                 if (ref && ref !== _this.state._ref) {
                     _this.setState({ _ref: ref }, function () {
