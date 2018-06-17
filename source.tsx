@@ -363,6 +363,7 @@ export class DVL extends React.PureComponent<{
         return (
             <div className={this.props.containerClass} style={{
                 marginBottom: "10px",
+                boxSizing: "content-box",
                 ...this.props.containerStyle,
             }} ref={(ref) => {
                 if (ref && ref !== this.state._ref) {

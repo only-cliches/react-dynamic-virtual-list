@@ -33,7 +33,7 @@ const DVL = require("react-dynamic-virtual-list").DVL;
 To use directly in the browser, drop the tag below into your `<head>`.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/react-dynamic-virtual-list@1.5.0/dist/react-dvl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dynamic-virtual-list@1.6.0/dist/react-dvl.min.js"></script>
 ```
 
 

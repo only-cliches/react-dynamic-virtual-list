@@ -298,7 +298,7 @@ var DVL = (function (_super) {
             return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle) },
                 React.createElement("div", { className: this.props.innerContainerClass || "", style: this.props.innerContainerStyle || {} }, this.props.items.map(function (e, j) { return _this.props.onRender(e, j, 0); }))));
         }
-        return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle), ref: function (ref) {
+        return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px", boxSizing: "content-box" }, this.props.containerStyle), ref: function (ref) {
                 if (ref && ref !== _this.state._ref) {
                     _this.setState({ _ref: ref }, function () {
                         if (_this._hasWin && window.getComputedStyle(ref).overflow !== "scroll" && window.getComputedStyle(ref).overflowY !== "scroll") {
