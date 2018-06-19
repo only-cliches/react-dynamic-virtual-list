@@ -20,6 +20,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var invisible = { opacity: 0, height: 0 };
+var memoizeCache = {};
 var DVL = (function (_super) {
     __extends(DVL, _super);
     function DVL(p) {
@@ -59,6 +60,14 @@ var DVL = (function (_super) {
             window.addEventListener("resize", this._debounceResize);
         }
     };
+    DVL.prototype.componentDidUpdate = function (prevProps, prevState, snapshot) {
+        if (prevProps.items !== this.props.items) {
+            if (this.props.cacheKey) {
+                memoizeCache[String(this.props.cacheKey)] = {};
+            }
+            this._reflowLayout();
+        }
+    };
     DVL.prototype.componentWillUnmount = function () {
         if (this._hasWin) {
             window.removeEventListener("resize", this._debounceResize);
@@ -73,25 +82,29 @@ var DVL = (function (_super) {
             clearTimeout(this._doResize);
         }
         this._doResize = setTimeout(function () {
+            if (_this.props.cacheKey) {
+                memoizeCache[String(_this.props.cacheKey)] = {};
+            }
             _this._reflowLayout();
         }, 250);
     };
     DVL.prototype._doReflow = function () {
         var _this = this;
+        if (this.props.cacheKey && memoizeCache[String(this.props.cacheKey)]) {
+            if (memoizeCache[String(this.props.cacheKey)][window.innerWidth]) {
+                this._itemRows = memoizeCache[String(this.props.cacheKey)][window.innerWidth].rows;
+                this._itemHeight = memoizeCache[String(this.props.cacheKey)][window.innerWidth].items;
+                this.setState({
+                    _scrollHeight: memoizeCache[String(this.props.cacheKey)][window.innerWidth].height
+                }, function () {
+                    _this._calcVisible();
+                });
+                return;
+            }
+        }
         this._progressCounter = 0;
         this._itemHeight = [];
         this._itemRows = [];
-        if (this._hasWin && !this._oldScroll && this._scrollContainer) {
-            if (this._scrollContainer !== window) {
-                this._oldScroll = this._scrollContainer.scrollTop;
-                this._scrollContainer.scrollTop = 0;
-            }
-            else {
-                var doc = document.documentElement;
-                this._oldScroll = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
-                this._scrollContainer.scrollTo(0, 0);
-            }
-        }
         setTimeout(function () {
             _this.setState({ _loading: true }, function () {
                 var calcHeight = _this.props.calculateHeight;
@@ -157,6 +170,16 @@ var DVL = (function (_super) {
             this._itemRows = this._itemHeight;
         }
         if (doFinalPass) {
+            if (this.props.cacheKey) {
+                if (!memoizeCache[String(this.props.cacheKey)]) {
+                    memoizeCache[String(this.props.cacheKey)] = {};
+                }
+                memoizeCache[String(this.props.cacheKey)][window.innerWidth] = {
+                    rows: this._itemRows,
+                    items: this._itemHeight,
+                    height: scrollHeight
+                };
+            }
             this.setState({
                 _loading: false,
                 _columns: columns,
@@ -165,7 +188,7 @@ var DVL = (function (_super) {
                 _this.setState({ _scrollHeight: scrollHeight }, function () {
                     _this._scheduleVisibleUpdate();
                 });
-                _this.props.onResizeFinish ? _this.props.onResizeFinish(scrollHeight, columns) : null;
+                _this.props.onResizeFinish ? _this.props.onResizeFinish(scrollHeight, columns, _this._itemHeight) : null;
             });
         }
         else {
@@ -200,15 +223,6 @@ var DVL = (function (_super) {
     DVL.prototype._calcVisible = function (scrollTopIn, heightIn) {
         var _this = this;
         var height = heightIn || this.state._ref.clientHeight;
-        if (this._oldScroll && this._hasWin) {
-            if (this._scrollContainer !== window) {
-                this._scrollContainer.scrollTop = Math.min(this._oldScroll, this.state._scrollHeight - height);
-            }
-            else {
-                this._scrollContainer.scrollTo(0, Math.min(this._oldScroll, this.state._scrollHeight));
-            }
-            this._oldScroll = undefined;
-        }
         var topHeight = 0;
         var scrollTop = scrollTopIn || this.state._ref.scrollTop;
         var top = 0;
@@ -298,7 +312,7 @@ var DVL = (function (_super) {
             return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px" }, this.props.containerStyle) },
                 React.createElement("div", { className: this.props.innerContainerClass || "", style: this.props.innerContainerStyle || {} }, this.props.items.map(function (e, j) { return _this.props.onRender(e, j, 0); }))));
         }
-        return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px", boxSizing: "content-box" }, this.props.containerStyle), ref: function (ref) {
+        return (React.createElement("div", { className: this.props.containerClass, style: __assign({ marginBottom: "10px", boxSizing: "content-box", height: !this.state._ref && this.state._scrollHeight ? this.state._scrollHeight : "" }, this.props.containerStyle), ref: function (ref) {
                 if (ref && ref !== _this.state._ref) {
                     _this.setState({ _ref: ref }, function () {
                         if (_this._hasWin && window.getComputedStyle(ref).overflow !== "scroll" && window.getComputedStyle(ref).overflowY !== "scroll") {

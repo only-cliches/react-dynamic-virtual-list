@@ -2,6 +2,10 @@ import * as React from "react";
 
 const invisible = { opacity: 0, height: 0 };
 
+const memoizeCache: {[key: string]: {
+    [width: number]: {rows: number[], items: number[], height: number};
+}} = {};
+
 export class DVL extends React.PureComponent<{
     onRender: (item: any, index: number, columns?: number) => JSX.Element;
     items: any[];
@@ -13,10 +17,11 @@ export class DVL extends React.PureComponent<{
     containerClass?: string;
     innerContainerClass?: string;
     innerContainerStyle?: React.CSSProperties;
+    cacheKey: string|number;
     doUpdate?: (calcVisible: (scrollTop?: number, containerHeight?: number) => void) => void;
     gridItemWidth?: number;
     onResizeStart?: (doResize: () => void) => void;
-    onResizeFinish?: (scrollHeight: number, columns: number) => void;
+    onResizeFinish?: (scrollHeight: number, columns: number, heights: number[]) => void;
 }, {
         _loading: boolean;
         _scrollHeight: number;
@@ -83,6 +88,15 @@ export class DVL extends React.PureComponent<{
 
     }
 
+    public componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.items !== this.props.items) {
+            if (this.props.cacheKey) {
+                memoizeCache[String(this.props.cacheKey)] = {};
+            }
+            this._reflowLayout();
+        }
+    }
+
     public componentWillUnmount() {
         if (this._hasWin) {
             window.removeEventListener("resize", this._debounceResize);
@@ -97,14 +111,32 @@ export class DVL extends React.PureComponent<{
             clearTimeout(this._doResize);
         }
         this._doResize = setTimeout(() => {
+            if (this.props.cacheKey) {
+                memoizeCache[String(this.props.cacheKey)] = {};
+            }
             this._reflowLayout();
         }, 250);
     }
 
     private _doReflow() {
+
+        if (this.props.cacheKey && memoizeCache[String(this.props.cacheKey)]) {
+            if (memoizeCache[String(this.props.cacheKey)][window.innerWidth]) {
+                this._itemRows = memoizeCache[String(this.props.cacheKey)][window.innerWidth].rows;
+                this._itemHeight = memoizeCache[String(this.props.cacheKey)][window.innerWidth].items;
+                this.setState({
+                    _scrollHeight: memoizeCache[String(this.props.cacheKey)][window.innerWidth].height
+                }, () => {
+                    this._calcVisible();
+                })
+                return;
+            }   
+        }
+
         this._progressCounter = 0;
         this._itemHeight = [];
         this._itemRows = [];
+        /*
         if (this._hasWin && !this._oldScroll && this._scrollContainer) {
             if (this._scrollContainer !== window) {
                 this._oldScroll = this._scrollContainer.scrollTop;
@@ -115,7 +147,7 @@ export class DVL extends React.PureComponent<{
                 this._scrollContainer.scrollTo(0, 0);
             }
         }
-
+        */
         setTimeout(() => {
             this.setState({ _loading: true }, () => {
                 const calcHeight = this.props.calculateHeight;
@@ -189,6 +221,18 @@ export class DVL extends React.PureComponent<{
         }
 
         if (doFinalPass) {
+
+            if (this.props.cacheKey) {
+                if (!memoizeCache[String(this.props.cacheKey)]) {
+                    memoizeCache[String(this.props.cacheKey)] = {};
+                }
+                memoizeCache[String(this.props.cacheKey)][window.innerWidth] = {
+                    rows: this._itemRows,
+                    items: this._itemHeight,
+                    height: scrollHeight
+                }
+            }
+
             this.setState({
                 _loading: false,
                 _columns: columns,
@@ -197,7 +241,7 @@ export class DVL extends React.PureComponent<{
                 this.setState({ _scrollHeight: scrollHeight }, () => {
                     this._scheduleVisibleUpdate();
                 })
-                this.props.onResizeFinish ? this.props.onResizeFinish(scrollHeight, columns) : null;
+                this.props.onResizeFinish ? this.props.onResizeFinish(scrollHeight, columns, this._itemHeight) : null;
             })
         } else {
             const avg = Math.round(scrollHeight / progress);
@@ -238,7 +282,7 @@ export class DVL extends React.PureComponent<{
     private _calcVisible(scrollTopIn?: number, heightIn?: number) {
 
         let height = heightIn || this.state._ref.clientHeight;
-
+/*
         if (this._oldScroll && this._hasWin) {
             if (this._scrollContainer !== window) {
                 this._scrollContainer.scrollTop = Math.min(this._oldScroll, this.state._scrollHeight - height);
@@ -247,7 +291,7 @@ export class DVL extends React.PureComponent<{
             }
             this._oldScroll = undefined;
         }
-
+*/
         let topHeight = 0;
         let scrollTop = scrollTopIn || this.state._ref.scrollTop;
 
@@ -364,6 +408,7 @@ export class DVL extends React.PureComponent<{
             <div className={this.props.containerClass} style={{
                 marginBottom: "10px",
                 boxSizing: "content-box",
+                height: !this.state._ref && this.state._scrollHeight ? this.state._scrollHeight : "",
                 ...this.props.containerStyle,
             }} ref={(ref) => {
                 if (ref && ref !== this.state._ref) {

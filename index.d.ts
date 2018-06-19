@@ -11,10 +11,11 @@ export declare class DVL extends React.PureComponent<{
     containerClass?: string;
     innerContainerClass?: string;
     innerContainerStyle?: React.CSSProperties;
+    cacheKey: string | number;
     doUpdate?: (calcVisible: (scrollTop?: number, containerHeight?: number) => void) => void;
     gridItemWidth?: number;
     onResizeStart?: (doResize: () => void) => void;
-    onResizeFinish?: (scrollHeight: number, columns: number) => void;
+    onResizeFinish?: (scrollHeight: number, columns: number, heights: number[]) => void;
 }, {
     _loading: boolean;
     _scrollHeight: number;
@@ -42,6 +43,7 @@ export declare class DVL extends React.PureComponent<{
     private _useWindow;
     constructor(p: any);
     componentWillMount(): void;
+    componentDidUpdate(prevProps: any, prevState: any, snapshot: any): void;
     componentWillUnmount(): void;
     private _debounceResize();
     private _doReflow();
